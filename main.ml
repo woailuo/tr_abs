@@ -2,6 +2,8 @@ module F = Frontc
 module C = Cil
 module E = Errormsg
 
+let str = ref " hello \n"
+
 let parseOneFile (fname: string) : C.file =
   let cabs, cil = F.parse_with_cabs fname () in
   Rmtmps.removeUnusedTemps cil;
@@ -17,5 +19,6 @@ let main (): unit =
   let fname = Sys.argv.(1) in
   let file =  parseOneFile fname in
   Trans.transfor(file)
+
 
 let _ = main ();;

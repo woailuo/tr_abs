@@ -169,8 +169,8 @@ and analyStmts (s : stmt) : unit =
        | true -> let b = raiseNullExStmts vi tb.bstmts in
                  match b with
                    true -> (s.skind <- Block tb); (analyBlock tb);
-                   print_string " both raise null exception \n"
-                 | false -> print_string " one or two branches do not raise null exception  \n"
+                   print_string " Can Do Transformation on this statement \n"
+                 | false -> print_string " Cannot Do Transformation on this statement \n"
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) \n";

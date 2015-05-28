@@ -1,32 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* #define ROWS 30 */
 
-/* typedef struct Address { */
-/*     int id; */
-/*     int set; */
-/* } Address; */
-
-/* typedef struct Database { */
-/*     struct Address rows[ROWS]; */
-/* } Database; */
-
-/* typedef struct Connection { */
-/*     /\* FILE  *file; *\/ */
-/*   int num; */
-/*     struct Database *db; */
-/* }Connection; */
-
-/* void f(void (*)(unsigned int)); */
+void f(void (*)(unsigned int));
 int func(int);
 
 
 int main()
 {
-    /* struct Connection *conn = malloc(sizeof(struct Connection)); */
-    /* conn->db = malloc(sizeof(struct Database)); */
-
   int *q = (int*)malloc(sizeof(int));
   int *r = (int*)malloc(sizeof(int));
   int c =0;
@@ -34,7 +15,6 @@ int main()
 
   if(q)
     {
-      int m = 1;
 
       if(c>1) // raiseNullExExpr (BinOp(..)) (...)
         {
