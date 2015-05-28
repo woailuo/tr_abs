@@ -2,8 +2,6 @@ module F = Frontc
 module C = Cil
 module E = Errormsg
 
-let str = ref " hello \n"
-
 let parseOneFile (fname: string) : C.file =
   let cabs, cil = F.parse_with_cabs fname () in
   Rmtmps.removeUnusedTemps cil;
