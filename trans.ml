@@ -189,7 +189,8 @@ and analyStmts (s : stmt) : unit =
   | ComputedGoto _ -> print_string "ComputedGoto\n"
   | Break _ -> print_string " Break\n"
   | Continue _ -> print_string " Continue\n"
-  | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] -> (* simple pointer like : if(p)*)
+  (* simple pointer like : if(p)*)
+  | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] ->
      print_string " Start Analysis if (_,_,_): simple pointer \n";
      let ispointer = isPointer vi in
      (
@@ -203,15 +204,18 @@ and analyStmts (s : stmt) : unit =
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : simple pointer \n";
-  | If(Lval(Mem e, Field(fieldinfo, offset)),tb,eb,loc) when (eb.bstmts = [] )-> (* complicated pointer : p->q*)
+  (* complicated pointer : p->q*)
+  | If(Lval(Mem e, Field(fieldinfo, offset)),tb,eb,loc) when (eb.bstmts = [] )->
     print_string " Start Analysis if (_,_,_): complicated pointer \n";
     let ispointer =( isPointer_Offset fieldinfo offset ) in
      ( match ispointer with
          false ->  print_string " if-guard is not a pointer \n"
-       | true ->  print_string " want to go into deeper \n "
+       | true ->  (* is next statement raise null exception ?*)
+         print_string " want to go into deeper \n ";
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : complicated pointer \n";
+   (* other if statements *)
   | If _ -> print_string " if \n"
   | Switch(_,b,_,_) -> print_string " switch\n "
   | Loop(b,_,_,_) -> analyBlock b
