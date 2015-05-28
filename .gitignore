@@ -1,0 +1,9 @@
+*.[oa]
+*~
+*.aux
+*.cm[iox]
+abs_trans
+*#*#
+tr.c
+output_file
+files

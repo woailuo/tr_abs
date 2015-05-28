@@ -22,5 +22,5 @@ install: $(CMXS)
 clean:
 	rm -f $(PROGNAME)
 	rm -f *.cm[iox]  *.o *~
-	rm -f output.c
+	rm -f output_file
 

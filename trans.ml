@@ -8,7 +8,7 @@ let rec getVarinfoName (expr : exp) : string =
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
   | _ -> print_string " not lval ";  ""
 
-and getSimplePointer(expr:exp) : bool =
+(* and getSimplePointer(expr:exp) : bool = *)
 
 
 and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
