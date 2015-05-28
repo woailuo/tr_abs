@@ -8,6 +8,9 @@ let rec getVarinfoName (expr : exp) : string =
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
   | _ -> print_string " not lval ";  ""
 
+and getSimplePointer(expr:exp) : bool =
+
+
 and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
   match expr with
     Lval (Var info, _ ) ->  print_string (" ex expr var info: "^ info.vname ^" \n" ) ; false
@@ -119,14 +122,14 @@ and  raiseNullExStmt (vi:varinfo) (stm: stmt) : bool =
   | Instr ins ->  (print_string "  \n Start instructions:  \n");
                   let b =  (raiseNullExInstrs vi ins) in
                    (print_string " \n  End instructions:  \n"); b
-  | If(guard ,tb,fb,_) ->
+  | If(guard ,tb,fb,_) when fb.bstmts = [] ->
      (
        let bgd = raiseNullExExpr vi guard in
        match bgd with
          true -> true
        | false -> let btb =  (raiseNullExStmts vi tb.bstmts ) in  (* consider guard part *)
-                      let bfb  = (raiseNullExStmts  vi fb.bstmts ) in
-                      btb && bfb
+                      (* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *)
+                      btb (* && bfb *)
      )
   | Loop (b, loc,_,_ ) ->  false
   | Return _   | Goto _   | ComputedGoto _   | Break _   | Continue _
@@ -194,16 +197,6 @@ and transfor (f : file) : unit =
                    (print_string " Start GFun: \n");
                    ( analyFuns func  );
                    (print_string " End GFun: \n");
-                (* | GType _ -> print_string " typedef \n" *)
-                (* | GCompTag _ -> print_string " Gcomptag \n" *)
-                (* | GCompTagDecl _ -> print_string " Gcomptagdecl \n" *)
-                (* | GEnumTag _ -> print_string " GenumTag \n" *)
-                (* | GEnumTagDecl _ -> print_string " Gcomptagdecl \n" *)
-                (* | GVarDecl _ -> print_string " Gvardecl \n" *)
-                (* | GVar _ -> print_string " Gvar \n" *)
-                (* | GAsm (str, _) -> print_string " Gasm:   " ; print_string (str ^ "\n"); *)
-                (* | GPragma _ -> print_string " gpragma \n" *)
-                (* | GText _ -> print_string " gtext \n" *)
                 | _ -> ()
       )
       f.globals (*global list :  functions*)

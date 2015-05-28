@@ -18,8 +18,9 @@ let main (): unit =
   let file =  parseOneFile fname in
   Trans.transfor(file);
   try
-  let c = open_out "output.c" in
-  C.dumpFile (!C.printerForMaincil) c "output.c" file
+  let channel = open_out "output.c" in
+  (C.dumpFile (!C.printerForMaincil) channel "output.c") file;
+  close_out channel
   with
     _ -> print_string " \n Couldn't open file \n"
 
