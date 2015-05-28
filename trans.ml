@@ -8,7 +8,11 @@ let rec getVarinfoName (expr : exp) : string =
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
   | _ -> print_string " not lval ";  ""
 
-(* and getSimplePointer(expr:exp) : bool = *)
+and isSimplePointer(expr:exp) : bool =
+  match expr with
+      Lval ( Var a, _ ) -> isPointer a
+  | Lval(Mem e ,_) -> false
+  | _ -> print_string " simple pointer not \n "; false
 
 
 and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
@@ -122,15 +126,25 @@ and  raiseNullExStmt (vi:varinfo) (stm: stmt) : bool =
   | Instr ins ->  (print_string "  \n Start instructions:  \n");
                   let b =  (raiseNullExInstrs vi ins) in
                    (print_string " \n  End instructions:  \n"); b
-  | If(guard ,tb,fb,_) when fb.bstmts = [] ->
-     (
+  (* | If(guard ,tb,fb,_) when (fb.bstmts = [])&&(isSimplePointer guard) -> *)
+  (*    ( *)
+  (*      let bgd = raiseNullExExpr vi guard in *)
+  (*      match bgd with *)
+  (*        true -> true *)
+  (*      | false -> let btb =  (raiseNullExStmts vi tb.bstmts ) in  (\* consider guard part *\) *)
+  (*                     (\* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *\) *)
+  (*                     btb (\* && bfb *\) *)
+  (*    ) *)
+  | If(guard, tb,fb,_) when fb.bstmts =[] ->
+    (
        let bgd = raiseNullExExpr vi guard in
        match bgd with
          true -> true
        | false -> let btb =  (raiseNullExStmts vi tb.bstmts ) in  (* consider guard part *)
                       (* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *)
                       btb (* && bfb *)
-     )
+    )
+  | If _ -> false
   | Loop (b, loc,_,_ ) ->  false
   | Return _   | Goto _   | ComputedGoto _   | Break _   | Continue _
   | Switch _   | Block _  | TryFinally _
@@ -155,6 +169,18 @@ and isPointer (vi : varinfo) =
   | TEnum _ -> print_string " tenum\n"; false
   | TBuiltin_va_list  _ -> print_string " tbuiltin_va_list\n"; false
 
+and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) : bool = (* p->q, check if q has offset and the offset is pointer; q has no offset, then q should be a pointer *)
+  match ofs with
+      NoOffset ->
+        (
+          match fdinfo.ftype with
+              TPtr _ ->( print_string ( fdinfo.fname ^"  is a pointer : \n " )); true
+            | _ -> (print_string (fdinfo.fname ^ " is not a pointer \n")); false
+      )
+    | Field (fd_info, off_set) -> isPointer_Offset fd_info off_set
+    | _ -> print_string " array index offset \n"; false
+
+
 and analyStmts (s : stmt) : unit =
   match s.skind with
   | Instr il -> print_string " instr\n";
@@ -163,8 +189,8 @@ and analyStmts (s : stmt) : unit =
   | ComputedGoto _ -> print_string "ComputedGoto\n"
   | Break _ -> print_string " Break\n"
   | Continue _ -> print_string " Continue\n"
-  | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] ->
-     print_string " Start Analysis if (_,_,_): \n \n";
+  | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] -> (* simple pointer like : if(p)*)
+     print_string " Start Analysis if (_,_,_): simple pointer \n";
      let ispointer = isPointer vi in
      (
        match ispointer with
@@ -176,8 +202,16 @@ and analyStmts (s : stmt) : unit =
                  | false -> print_string " Cannot Do Transformation on this statement \n"
      );
      changesPValue:= false;
-     print_string " End Analysis if(_,_,_) \n";
-
+     print_string " End Analysis if(_,_,_) : simple pointer \n";
+  | If(Lval(Mem e, Field(fieldinfo, offset)),tb,eb,loc) when (eb.bstmts = [] )-> (* complicated pointer : p->q*)
+    print_string " Start Analysis if (_,_,_): complicated pointer \n";
+    let ispointer =( isPointer_Offset fieldinfo offset ) in
+     ( match ispointer with
+         false ->  print_string " if-guard is not a pointer \n"
+       | true ->  print_string " want to go into deeper \n "
+     );
+     changesPValue:= false;
+     print_string " End Analysis if(_,_,_) : complicated pointer \n";
   | If _ -> print_string " if \n"
   | Switch(_,b,_,_) -> print_string " switch\n "
   | Loop(b,_,_,_) -> analyBlock b

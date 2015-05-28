@@ -5,5 +5,5 @@
 abs_trans
 *#*#
 tr.c
-output_file
+rewritten_file.c
 files

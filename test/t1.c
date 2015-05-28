@@ -21,7 +21,7 @@ int main()
           /* q = r; */
           /* printf("%d\n", conn->num); */
           /* f(free); */
-          printf("%d\n",*q + 1);
+          printf("%x\n",q->f);
           /* q =(int *)malloc(sizeof(int)); */
           /* q = func(*q); */
           /* int m = *q; */
