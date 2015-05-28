@@ -18,7 +18,11 @@ let main (): unit =
 
   let fname = Sys.argv.(1) in
   let file =  parseOneFile fname in
-  Trans.transfor(file)
-
+  Trans.transfor(file);
+  try
+  let c = open_out "output.c" in
+  C.dumpFile (!C.printerForMaincil) c "output.c" file
+  with
+    _ -> print_string " \n Couldn't open file \n"
 
 let _ = main ();;
