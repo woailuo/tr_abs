@@ -8,19 +8,24 @@ let rec getVarinfoName (expr : exp) : string =
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
   | _ -> print_string " not lval ";  ""
 
+and compareLval (lv : lval) (expr : exp) :bool =
+  match expr with
+    Lval ((Var vinfo, _) as ln) -> let b = ( ln = lv) in (print_string( " compare var : " ^ string_of_bool b^ "\n")); b
+  | Lval((Mem e, NoOffset) as ln) -> print_string " compare mem e nooffset:  ";  compareLval lv e
+  | Lval((Mem e, Field(fdinfo, offset)) as ln) -> print_string " compare mem field :  "; compareLval lv e
+  | _ -> print_string " other , unknown \n"; false
 
-
-and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
+and raiseNullExExpr (lv : lval ) (expr : exp) : bool =
   match expr with
     Lval (Var info, _ ) ->  print_string (" ex expr var info: "^ info.vname ^" \n" ) ; false
-  | Lval (Mem e, Field(fieldinfo, offset)) ->
-     print_string (" raise mem : p->f :  " ^ vi.vname ^ " ; " ^ "\n");
-     if (vi.vname = getVarinfoName e) then true else false
-  | Lval (Mem e, NoOffset) ->
-     print_string ( " raise mem : *p :"  ^ vi.vname^ " ; " ^ "\n" );
-     if (vi.vname = getVarinfoName e ) then true else false
+    | Lval ((Mem e, Field(fieldinfo, offset)) as ln ) ->
+     print_string (" raise mem : p->f :  " ^ getVarinfoName e ^ " ; " ^ "\n");
+     if (compareLval lv e ) then true else false
+  | Lval ((Mem e, NoOffset) as ln) ->
+     print_string ( " raise mem : *p :"  ^ getVarinfoName e ^ " ; " ^ "\n" );
+     if (compareLval lv e) then true else false
   | Lval (Mem e, _) ->
-    ( print_string( " raise mem no offset :  " ^ vi.vname ^ " ; "^" \n" )) ; false
+     ( print_string( " raise mem no offset :  " ^ getVarinfoName e^ " ; "^" \n" )) ; false
   | Const c  ->  (match c with
                     CInt64 _ -> print_string " cint 64\n";false
                   | CStr s -> print_string (" cstr s : " ^ s ^ " \n");false
@@ -35,8 +40,8 @@ and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
   | AlignOf _ -> print_string " rasise err alignof \n";false
   | AlignOfE _ -> print_string " rasise err alignofe \n";false
   | UnOp _  -> print_string " rasise err unop \n";false
-  | BinOp  (binop, e1, e2,typ) ->  let b1 = raiseNullExExpr vi e1 in
-                                   let b2 = raiseNullExExpr vi e2 in
+  | BinOp  (binop, e1, e2,typ) ->  let b1 = raiseNullExExpr lv e1 in
+                                   let b2 = raiseNullExExpr lv e2 in
                                    b1 || b2
   | Question _-> print_string " rasise err question \n";false
   | CastE _-> print_string " rasise err caste \n";false
@@ -45,82 +50,82 @@ and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
   | StartOf _ -> print_string " raise err  startof \n"; false
 
 
-and raiseNullExLval (vi : varinfo) (va :lval) : bool =
+and raiseNullExLval (lv : lval) (va :lval) : bool =
   match va with
     (Var a, _) ->  print_string (" ex lval var: " ^ a.vname ^ "\n" ); false
   | (Mem exp,Field(fieldinfo, offset) ) ->
       print_string " raise mem in ex lval  : p->f  \n";
-     if (vi.vname = getVarinfoName exp ) then true else false
+     if (lv = va ) then true else false
   | (Mem exp, NoOffset) ->
       print_string " raise mem in ex lval : *p \n";
-     if (vi.vname = getVarinfoName exp ) then true else false
+     if (lv = va ) then true else false
   | (Mem exp, _) ->  print_string " raise mem  in lval : _   \n"; false
 
-and iterRaiseExps (vi:varinfo) (exps : exp list) =
+and iterRaiseExps (lv:lval) (exps : exp list) =
   match exps with
     [] -> false
-  | e :: rest -> let b1 = (raiseNullExExpr vi e) in
+  | e :: rest -> let b1 = (raiseNullExExpr lv e) in
                  (print_string "    end iter rasi eexp \n ");
-                 let b2 =  (iterRaiseExps vi rest) in
+                 let b2 =  (iterRaiseExps lv rest) in
                  b1 || b2
 
-and raiseFreeNullEx (vi:varinfo) (e : exp) : bool =
+and raiseFreeNullEx (lv : lval ) (e : exp) : bool =
   match e with
-    Lval (Var a, NoOffset) -> a = vi
+    Lval ln  -> ln = lv
   | _ -> false
 
-and  raiseNullExInstr (vi:varinfo)  (ins : instr) : bool =
+and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
   match ins with
-    Set ((Var a,_), _ ,_)  when a.vname = vi.vname -> (*  assignment like p = q;  changes p's value*)
+    Set ((Var a,_) as ln, _ ,_)  when ln = lv -> (*  assignment like p = q;  changes p's value*)
     print_string "  instruction changes value of pointer : p = q :   \n";
     (changesPValue := true); false  (* todo *)
-   | Set (lval, exp, loc) -> (print_string " \n set lval exp : \n" ); (*  int m = *p; or *p = *q; or ... *)
-                             let b1 =  ( raiseNullExLval vi lval) in
-                            ( print_string " lval end \n" );
-                            let b2 = (raiseNullExExpr vi exp) in
-                            print_string " expr end \n" ;     b1 || b2
-   | Call(_, Lval(Var a,NoOffset), [e], loc) when a.vname = "free" ->
+   | Set (ln, exp, loc) -> (print_string " \n set lval exp : \n" ); (*  int m = *p; or *p = *q; or ... *)
+                             let b1 =  ( raiseNullExLval lv ln) in
+                            ( print_string (" lval end : " ^ string_of_bool b1 ^" \n") );
+                            let b2 = (raiseNullExExpr lv exp) in
+                            print_string (" expr end " ^string_of_bool b2^ "\n" );     b1 || b2
+   | Call(_, Lval((Var a,NoOffset) as ln), [e], loc) when a.vname = "free" ->
       (print_string " start free null exce  \n ");
       ( print_string " call var , no offset , free function \n ");
-      let b1 = (raiseFreeNullEx vi e) in
-      let b2 =  (raiseNullExExpr vi e) in
+      let b1 = (raiseFreeNullEx lv e) in
+      let b2 =  (raiseNullExExpr lv e) in
       (print_string (" raise free null ex : "^ string_of_bool b1 ^" \n"));
-      (print_string (" raise null ex  when free : "^ string_of_bool b2 ^" \n"));
+      (print_string (" raise null ex of e when free(e) : "^ string_of_bool b2 ^" \n"));
       ( print_string " end free null exception \n ");
       b1 || b2
-   | Call (Some (Var a, _), _ , exps, loc) when a.vname = vi.vname -> (* changes p's value *)
+   | Call (Some ((Var a, _) as ln ), _ , exps, loc) when ln = lv -> (* changes p's value *)
            print_string "  functions change value of pointer like : p = functions :   \n";
            (changesPValue := true); false  (* todo *)
    | Call (Some lval, _, exps, loc) ->
        (print_string " Start  call functions \n");
-       let b1 = (raiseNullExLval vi lval) in
+       let b1 = (raiseNullExLval lv lval) in
       (print_string (" left value raise null exception   : " ^ string_of_bool b1 ^"\n"));
-      let b2 = ( iterRaiseExps vi exps) in
+      let b2 = ( iterRaiseExps lv exps) in
       (print_string (" right expression raise null exception  : " ^ string_of_bool b2 ^"\n"));
       (print_string "  End : call functions like : ( *p = func(); m = func(*p); ) \n" );  b1 || b2
     | Call (None ,exp,exps,location) ->
                                    print_string " Start call exps \n";
-                                   let b = (iterRaiseExps vi exps) in
+                                   let b = (iterRaiseExps lv exps) in
                                    print_string " End of the call exps \n";   b
    | Asm _ -> print_string " raise asm\n"; false
 
-and raiseNullExInstrs (vi:varinfo) (inss: instr list) : bool  =
+and raiseNullExInstrs (lv : lval) (inss: instr list) : bool  =
   match inss with
-    [] -> print_string " instructions nullex : false \n" ; false
+    [] -> print_string " instructions nullex : Nil , false \n" ; false
   | i :: rest ->
      (
-       let raisenull = raiseNullExInstr vi i  in
+       let raisenull = raiseNullExInstr lv i  in
        let changed = !changesPValue in
        match changed with
          true -> print_string " pointer's value is changed \n ";  false
-       | false ->  if raisenull then true else raiseNullExInstrs vi rest
+       | false -> (print_string (" raise null ex instructions : ceshi , "^ string_of_bool raisenull ^"\n")); if raisenull then true else raiseNullExInstrs lv rest
      )
 
-and  raiseNullExStmt (vi:varinfo) (stm: stmt) : bool =
+and  raiseNullExStmt (lv : lval) (stm: stmt) : bool =
   match stm.skind with
   | Instr ins ->  (print_string "  \n Start instructions:  \n");
-                  let b =  (raiseNullExInstrs vi ins) in
-                   (print_string " \n  End instructions:  \n"); b
+                  let b =  (raiseNullExInstrs lv ins) in
+                   print_string (" \n  End instructions: " ^ string_of_bool b ^" \n"); b
   (* | If(guard ,tb,fb,_) when (fb.bstmts = [])&&(isSimplePointer guard) -> *)
   (*    ( *)
   (*      let bgd = raiseNullExExpr vi guard in *)
@@ -131,12 +136,13 @@ and  raiseNullExStmt (vi:varinfo) (stm: stmt) : bool =
   (*                     btb (\* && bfb *\) *)
   (*    ) *)
   | If(guard, tb,fb,_) when fb.bstmts =[] ->
-    (
-       let bgd = raiseNullExExpr vi guard in
+    (  print_string "  Start : inner if statement :\n";
+       let bgd = raiseNullExExpr lv guard in
        match bgd with
-         true -> true
-       | false -> let btb =  (raiseNullExStmts vi tb.bstmts ) in  (* consider guard part *)
-                      (* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *)
+         true ->print_string " if-guard part raise null exception \n";  true
+       | false -> let btb =  (raiseNullExStmts lv tb.bstmts ) in  (* consider guard part *)
+                  (* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *)
+                  print_string ( "  End : inner if statement :  " ^ string_of_bool btb  ^ "\n");
                       btb (* && bfb *)
     )
   | If _ -> false
@@ -145,11 +151,11 @@ and  raiseNullExStmt (vi:varinfo) (stm: stmt) : bool =
   | Switch _   | Block _  | TryFinally _
   | TryExcept _ -> print_string " other statements \n" ; false
 
-and raiseNullExStmts (vi:varinfo) (stmts : stmt list) : bool =
+and raiseNullExStmts (lv : lval) (stmts : stmt list) : bool =
   match stmts with
   [] -> false (* *)
-  | s :: rest -> let b = raiseNullExStmt vi s in
-                     if b then true else (raiseNullExStmts vi rest)
+  | s :: rest -> let b = raiseNullExStmt lv s in
+                     if b then true else (raiseNullExStmts lv rest)
 
 (* and isSimplePointer(expr:exp) : bool = *)
 (*   match expr with *)
@@ -177,7 +183,7 @@ and derefPointer(vtype:typ)  : int =
 
 and isPointer (lv: lval) (n : int): bool =
   match lv with
-    (Var vi, _) -> (* p *)
+    (Var vi, _) -> (* p, or v *)
     (
       let nums = derefPointer vi.vtype in
       print_string (" derefnums = " ^ string_of_int nums ^ " ; ");
@@ -218,39 +224,41 @@ and analyStmts (s : stmt) : unit =
   | ComputedGoto _ -> print_string "ComputedGoto\n"
   | Break _ -> print_string " Break\n"
   | Continue _ -> print_string " Continue\n"
-  (* simple pointer like : if(p)*)
-  | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] ->
+  (* simple pointer like : if(p), p is a simple pointer;  or if(v), v is variable *)
+  | If(Lval((Var (vi:varinfo),NoOffset) as lv ),tb,eb,loc) when eb.bstmts = [] ->
      print_string " Start Analysis if (_,_,_): simple pointer \n";
-     let lv = (Var vi, NoOffset) in
-     let ispointer = isPointer lv 0 in
+     let ispointer = isPointer lv 0 in (* here must 0 *)
      (
        match ispointer with
-       false -> print_string " if-guard is not a pointer \n"
-       | true -> let b = raiseNullExStmts vi tb.bstmts in
+       false -> print_string " if-guard is not a pointer 1 \n"
+       | true -> let b = raiseNullExStmts lv tb.bstmts in
                  match b with
-                   true -> (s.skind <- Block tb); (analyBlock tb);
-                   print_string " Can Do Transformation on this statement \n"
+                   true -> (s.skind <- Block tb);
+                           print_string " Can Do Transformation on this statement \n ";
+                           (analyBlock tb);
                  | false -> print_string " Cannot Do Transformation on this statement \n"
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : simple pointer \n";
-  (* complicated pointer : p->q *)
-  | If(Lval(Mem e, offset),tb,eb,loc) when (eb.bstmts = [] )->
+  (* complicated pointer : p->q , or *p *)
+  | If(Lval((Mem e, offset) as lv),tb,eb,loc) when (eb.bstmts = [] )->
      print_string " Start Analysis if (_,_,_): complicated pointer \n";
-     let lv = (Mem e,offset) in
      let ispointer = isPointer lv 0 in
      ( match ispointer with
-         false ->  print_string " if-guard is not a pointer \n"
+         false ->  print_string " if-guard is not a pointer  2 \n"
        | true ->  (* is next statement raise null exception ?  obtain the next instruction or statement*)
-          (match tb.bstmts with
-             [] ->  print_string " go into deeper and the inner is NIL \n "
-           | a :: rest -> print_string " go into deeper and the inner is NOT NIL \n "
-          );
+          print_string " go into deeper and the inner is NOT NIL \n ";
+          let b = raiseNullExStmts lv tb.bstmts in
+          ( match b with
+            true -> (s.skind <- Block tb);
+                    print_string " Can Do Transformation on this statement : complicated pointer \n ";
+                           (analyBlock tb);
+                 | false -> print_string " Cannot Do Transformation on this statement : complicated pointerv\n" )
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : complicated pointer \n";
    (* other if statements *)
-  | If _ -> print_string " if \n"
+  | If _ -> print_string " if  other statements \n"
   | Switch(_,b,_,_) -> print_string " switch\n "
   | Loop(b,_,_,_) -> analyBlock b
   | Block b -> print_string " Block\n"
@@ -262,7 +270,7 @@ and analyBlock (b : block) : unit = List.iter analyStmts b.bstmts
 and analyFuns (func : fundec) : unit = analyBlock func.sbody
 
 and transfor (f : file) : unit =
-  try
+  (* try *)
  ( List.iter
       (fun g -> match g with
                 | GFun (func,loc) ->
@@ -274,5 +282,5 @@ and transfor (f : file) : unit =
       f.globals (*global list :  functions*)
 
  )
-   with
-      _ -> print_string " :  unknown  error occurs: kkkk \n"
+   (* with *)
+   (*    _ -> print_string " :  unknown  error occurs: kkkk \n" *)

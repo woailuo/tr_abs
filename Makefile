@@ -22,5 +22,5 @@ install: $(CMXS)
 clean:
 	rm -f $(PROGNAME)
 	rm -f *.cm[iox]  *.o *~
-	rm -f rewritten_file.c
+	rm -f rewritten_file.c out
 
