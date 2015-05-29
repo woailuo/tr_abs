@@ -8,11 +8,6 @@ let rec getVarinfoName (expr : exp) : string =
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
   | _ -> print_string " not lval ";  ""
 
-and isSimplePointer(expr:exp) : bool =
-  match expr with
-      Lval ( Var a, _ ) -> isPointer a
-  | Lval(Mem e ,_) -> false
-  | _ -> print_string " simple pointer not \n "; false
 
 
 and raiseNullExExpr (vi : varinfo) (expr : exp) : bool =
@@ -156,24 +151,58 @@ and raiseNullExStmts (vi:varinfo) (stmts : stmt list) : bool =
   | s :: rest -> let b = raiseNullExStmt vi s in
                      if b then true else (raiseNullExStmts vi rest)
 
-and isPointer (vi : varinfo) =
-  match vi.vtype with
+(* and isSimplePointer(expr:exp) : bool = *)
+(*   match expr with *)
+(*     Lval ( Var a, _ ) -> isPointer a *)
+(*   | Lval(Mem e ,_) -> false *)
+(*   | _ -> print_string " simple pointer not \n "; false *)
+and pointerType (vtype:typ) : bool =
+  match vtype with
     TVoid _   -> print_string " tvoid\n"; false
-  | TInt _  -> print_string " tint\n"; false
-  | TFloat  _ -> print_string " tfloat\n"; false
-  | TPtr _ -> true
-  |  TArray _ -> print_string " tvoid\n"; false
-  |  TFun _ -> print_string " tvoid\n"; false
-  | TNamed _  -> print_string " tnamed\n"; false
-  | TComp _ -> print_string " tcomp\n"; false
-  | TEnum _ -> print_string " tenum\n"; false
-  | TBuiltin_va_list  _ -> print_string " tbuiltin_va_list\n"; false
+  | TInt _  -> print_string " tint\n";  false
+  | TFloat  _ -> print_string " tfloat\n";  false
+  | TPtr (ptype,attrib) -> true
+  | TArray _ -> print_string " tvoid\n";  false
+  | TFun _ -> print_string " tvoid\n";  false
+  | TNamed _  -> print_string " tnamed\n";  false
+  | TComp _ -> print_string " tcomp\n";  false
+  | TEnum _ -> print_string " tenum\n";  false
+  | TBuiltin_va_list  _ -> print_string " tbuiltin_va_list\n";  false
+
+and derefPointer(vtype:typ)  : int =
+  match vtype with
+    TPtr(ptype,attrib) -> 1 + (derefPointer ptype )
+  | _ -> 0
+
+
+and isPointer (lv: lval) (n : int): bool =
+  match lv with
+    (Var vi, _) -> (* p *)
+    (
+      let nums = derefPointer vi.vtype in
+      print_string (" derefnums = " ^ string_of_int nums ^ " ; ");
+      print_string (" n  = " ^ string_of_int n ^ " \n ");
+      if nums > n then true else false
+    )
+  | (Mem e, Field(fdinfo, offset)) -> (*  p->q->r *)
+     isPointer_Offset fdinfo offset
+
+  | (Mem e, NoOffset) -> (* **p, *(p->q) *)
+     (
+       print_string "  this is a complicated pointer \n";
+       match e with
+         Lval ( (Var vi, _)  as lv2) -> isPointer lv2 (n+1)
+       | Lval ( (Mem e, NoOffset) as lv2 ) -> isPointer lv2 (n+1)
+       | Lval((Mem e, offset)as lv2) -> isPointer lv2 (n+1)
+       | _ ->  print_string " ceshi 3 \n" ; true
+     )
+  | _ -> print_string " other pointer or not \n"; false
 
 and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) : bool = (* p->q, check if q has offset and the offset is pointer; q has no offset, then q should be a pointer *)
   match ofs with
       NoOffset ->
-        (
-          match fdinfo.ftype with
+      (
+        match fdinfo.ftype with
               TPtr _ ->( print_string ( fdinfo.fname ^"  is a pointer : \n " )); true
             | _ -> (print_string (fdinfo.fname ^ " is not a pointer \n")); false
       )
@@ -192,7 +221,8 @@ and analyStmts (s : stmt) : unit =
   (* simple pointer like : if(p)*)
   | If(Lval(Var (vi:varinfo),NoOffset),tb,eb,loc) when eb.bstmts = [] ->
      print_string " Start Analysis if (_,_,_): simple pointer \n";
-     let ispointer = isPointer vi in
+     let lv = (Var vi, NoOffset) in
+     let ispointer = isPointer lv 0 in
      (
        match ispointer with
        false -> print_string " if-guard is not a pointer \n"
@@ -204,14 +234,18 @@ and analyStmts (s : stmt) : unit =
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : simple pointer \n";
-  (* complicated pointer : p->q*)
-  | If(Lval(Mem e, Field(fieldinfo, offset)),tb,eb,loc) when (eb.bstmts = [] )->
-    print_string " Start Analysis if (_,_,_): complicated pointer \n";
-    let ispointer =( isPointer_Offset fieldinfo offset ) in
+  (* complicated pointer : p->q *)
+  | If(Lval(Mem e, offset),tb,eb,loc) when (eb.bstmts = [] )->
+     print_string " Start Analysis if (_,_,_): complicated pointer \n";
+     let lv = (Mem e,offset) in
+     let ispointer = isPointer lv 0 in
      ( match ispointer with
          false ->  print_string " if-guard is not a pointer \n"
-       | true ->  (* is next statement raise null exception ?*)
-         print_string " want to go into deeper \n ";
+       | true ->  (* is next statement raise null exception ?  obtain the next instruction or statement*)
+          (match tb.bstmts with
+             [] ->  print_string " go into deeper and the inner is NIL \n "
+           | a :: rest -> print_string " go into deeper and the inner is NOT NIL \n "
+          );
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : complicated pointer \n";

@@ -4,6 +4,5 @@
 *.cm[iox]
 abs_trans
 *#*#
-tr.c
-rewritten_file.c
+*.c
 files
