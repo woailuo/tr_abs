@@ -35,15 +35,18 @@ struct Poker *Poker_create(char *name, int num)
 
 void Poker_destroy(struct Poker *pn)
 {
-    assert(pn != NULL);
+  if(pn != NULL){
 
+    if(pn->name){
     free(pn->name);
     /* free */
     Num = Num + 1;
+    }
 
     free(pn);
     /* free */
     Num = Num + 1;
+  }
 
 }
 
