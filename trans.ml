@@ -143,14 +143,15 @@ and raiseFreeNullEx (lv : lval ) (e : exp) : bool =
 
 and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
   match ins with
-    Set (ln , _ ,_) when (compareLval lv (Lval ln)) -> (*  assignment like p = q;  changes p's value*)
+    Set (ln , _ ,_) when  (not ( raiseNullExExpr lv (Lval ln))) && (compareLval lv  (Lval ln)) -> (*  assignment like p = q;  changes p's value*)
     print_string "  instruction changes value of pointer : p = q :   \n";
     (changesPValue := true); false  (* todo *)
    | Set (ln, exp, loc) -> (print_string " \n set lval exp : \n" ); (*  int m = *p; or *p = *q; or ... *)
                              let b1 =  ( raiseNullExLval lv ln) in
                             ( print_string (" lval end : " ^ string_of_bool b1 ^" \n") );
                             let b2 = (raiseNullExExpr lv exp) in
-                            print_string (" expr end " ^string_of_bool b2^ "\n" );     b1 || b2
+                            print_string (" expr end " ^string_of_bool b2^ "\n" );
+                            b1 || b2
    | Call(_, Lval( Var a,NoOffset), [e], loc) when a.vname = "free" ->
       print_string (getStructure e);
       (print_string " start free null exce  \n ");
@@ -162,7 +163,7 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
       (print_string (" raise null ex of e when free(e) : "^ string_of_bool b2 ^" \n"));
       ( print_string " end free null exception \n ");
       b1 || b2
-   | Call (Some ((Var a, _) as ln ), _ , exps, loc) when ln = lv -> (* changes p's value *)
+   | Call (Some ln , _ , exps, loc) when  (not ( raiseNullExExpr lv (Lval ln))) && (compareLval lv  (Lval ln)) -> (* changes p's value *)
            print_string "  functions change value of pointer like : p = functions :   \n";
            (changesPValue := true); false  (* todo *)
    | Call (Some lval, _, exps, loc) ->
@@ -171,7 +172,8 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
       (print_string (" left value raise null exception   : " ^ string_of_bool b1 ^"\n"));
       let b2 = ( iterRaiseExps lv exps) in
       (print_string (" right expression raise null exception  : " ^ string_of_bool b2 ^"\n"));
-      (print_string "  End : call functions like : ( *p = func(); m = func(*p); ) \n" );  b1 || b2
+      (print_string "  End : call functions like : ( *p = func(); m = func(*p); ) \n" );
+      b1 || b2
     | Call (None ,exp,exps,location) ->
                                    print_string " Start call exps \n";
                                    let b = (iterRaiseExps lv exps) in
@@ -286,6 +288,19 @@ and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) : bool = (* p->q, check
     | Field (fd_info, off_set) -> isPointer_Offset fd_info off_set
     | _ -> print_string " array index offset \n"; false
 
+and isNextStmRaiseNull (lv:lval) (s:stmt) =
+  match s.skind with
+  | Instr ins ->( match ins with
+                   [] -> false
+                 | i ::rest -> let b =  raiseNullExInstr lv i in
+                               if b then true else false )
+  | If(guard, tb,fb,_) -> let b = raiseNullExExpr lv guard in
+                          if b then true else false
+  | Loop (b, loc,_,_ ) ->  false
+  | Return _   | Goto _   | ComputedGoto _   | Break _   | Continue _
+  | Switch _   | Block _  | TryFinally _
+  | TryExcept _ -> print_string " other statements \n" ; false
+
 
 and analyStmts (s : stmt) : unit =
   match s.skind with
@@ -317,10 +332,17 @@ and analyStmts (s : stmt) : unit =
      let ispointer = isPointer lv 0 in
      ( match ispointer with
          false ->  print_string " if-guard is not a pointer  2 \n"
-       | true ->  (* is next statement raise null exception ?  obtain the next instruction or statement*)
+       | true ->  (* does next statement raise null exception ?  obtain the next instruction or statement*)
           print_string " go into deeper and the inner is NOT NIL \n ";
           let b = raiseNullExStmts lv tb.bstmts in
-          ( match b with
+          let c =
+           (
+            match tb.bstmts with
+              [] -> false
+            | stm :: rest -> isNextStmRaiseNull lv stm
+           ) in
+          print_string ( " next close raise null exception : " ^ string_of_bool c ^" \n");
+          ( match b&&c with
             true -> (s.skind <- Block tb);
                     print_string " Can Do Transformation on this statement : complicated pointer \n ";
                            (analyBlock tb);
