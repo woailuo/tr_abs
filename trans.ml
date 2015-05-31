@@ -46,13 +46,13 @@ and getStructure (expr : exp) : string =
 
 and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
   match expr with
-    Lval ((Var vinfo, _) as ln) ->print_string " error here 1 \n";
+    Lval ((Var vinfo, _) as ln) ->print_string " compare here 1 \n";
                                   (
                                     match lv with
                                       (Var lvinfo,_) -> if lvinfo.vname = vinfo.vname then true else false
                                     | _ -> false
                                   )
-  | Lval((Mem e, NoOffset) as ln) -> print_string " error here 2 \n";
+  | Lval((Mem e, NoOffset) as ln) -> print_string " compare here 2 \n";
      (        match (ln = lv) with
          true -> print_string " may raise null exception 1 \n "; true
        | false -> print_string " error here \n" ;  compareLval lv e
@@ -60,14 +60,21 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
   | Lval((Mem e, Field(fdinfo, offset) ) as ln) ->
      (
        match lv with
-         (Var vinfo, _) -> print_string "  v _\n"; false
+         (Var vinfo, _) ->
+         (
+         let vname = vinfo.vname in
+         let lnname = getStructure expr in
+         let b = contains vname lnname in
+         print_string (" compare when var vinfo :  " ^string_of_bool b ^"\n");
+         b
+         )
        | (Mem lve, NoOffset) -> print_string " m nooffse \n" ;false
        | (Mem lve, Field (ffinfo, foffset)) -> print_string " m f \n" ;
                                             (
                                               let lvstr = getStructure (Lval lv) in
                                               let lnstr = getStructure expr in
                                               let b = contains lvstr lnstr in
-                                              print_string (" compare:  " ^string_of_bool (contains lvstr lnstr) ^"\n");
+                                              print_string (" compare:  " ^string_of_bool b  ^"\n");
                                               b
                                             )
        | (Mem lve, Index _) -> print_string " m index \n"; false
@@ -79,7 +86,7 @@ and raiseNullExExpr (lv : lval ) (expr : exp) : bool = (* conn->age,  *(conn->ag
   match expr with
     Lval (Var info, _ ) ->  print_string (" ex expr var info: "^ info.vname ^" \n" ) ; false
     | Lval (Mem e, Field(fieldinfo, offset) ) ->
-     print_string (" raise mem : p->f :  " ^ getVarinfoName e ^ " ; " ^ "\n");
+       print_string (" raise mem : p->f :  " ^ getStructure expr ^ " ; " ^ "\n");
      if (compareLval lv e ) then true else false
   | Lval (Mem e, NoOffset) ->
      print_string ( " raise mem : *p :"  ^ getVarinfoName e ^ " ; " ^ "\n" );
@@ -104,22 +111,24 @@ and raiseNullExExpr (lv : lval ) (expr : exp) : bool = (* conn->age,  *(conn->ag
                                    let b2 = raiseNullExExpr lv e2 in
                                    b1 || b2
   | Question _-> print_string " rasise err question \n";false
-  | CastE _-> print_string " rasise err caste \n";false
+  | CastE  (ctype,cexp )->  raiseNullExExpr lv cexp
   | AddrOf _  -> print_string " rasise err addrof \n";false
   | AddrOfLabel _ -> print_string " rasise err addroflabel \n";false
   | StartOf _ -> print_string " raise err  startof \n"; false
 
 
-and raiseNullExLval (lv : lval) (va :lval) : bool =
-  match va with
-    (Var a, _) ->  print_string (" ex lval var: " ^ a.vname ^ "\n" ); false
-  | (Mem exp,Field(fieldinfo, offset) ) ->
-      print_string " raise mem in ex lval  : p->f  \n";
-     if (lv = va ) then true else false
-  | (Mem exp, NoOffset) ->
-      print_string " raise mem in ex lval : *p \n";
-     if (lv = va ) then true else false
-  | (Mem exp, _) ->  print_string " raise mem  in lval : _   \n"; false
+and raiseNullExLval (lv : lval) (ln :lval) : bool =
+  print_string " raise null exception lv , ln";
+  raiseNullExExpr lv (Lval ln)
+  (* match va with *)
+  (*   (Var a, _) ->  print_string (" ex lval var: " ^ a.vname ^ "\n" ); false *)
+  (* | (Mem exp,Field(fieldinfo, offset) ) -> *)
+  (*     print_string " raise mem in ex lval  : p->f  \n"; *)
+  (*    if (lv = va ) then true else false *)
+  (* | (Mem exp, NoOffset) -> *)
+  (*     print_string " raise mem in ex lval : *p \n"; *)
+  (*    if (lv = va ) then true else false *)
+  (* | (Mem exp, _) ->  print_string " raise mem  in lval : _   \n"; false *)
 
 and iterRaiseExps (lv:lval) (exps : exp list) =
   match exps with
@@ -134,7 +143,7 @@ and raiseFreeNullEx (lv : lval ) (e : exp) : bool =
 
 and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
   match ins with
-    Set ((Var a,_) as ln, _ ,_)  when ln = lv -> (*  assignment like p = q;  changes p's value*)
+    Set (ln , _ ,_) when (compareLval lv (Lval ln)) -> (*  assignment like p = q;  changes p's value*)
     print_string "  instruction changes value of pointer : p = q :   \n";
     (changesPValue := true); false  (* todo *)
    | Set (ln, exp, loc) -> (print_string " \n set lval exp : \n" ); (*  int m = *p; or *p = *q; or ... *)
@@ -171,14 +180,14 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
 
 and raiseNullExInstrs (lv : lval) (inss: instr list) : bool  =
   match inss with
-    [] -> print_string " instructions nullex : Nil , false \n" ; false
+    [] -> print_string " instructions nullex : Nil \n" ; false
   | i :: rest ->
      (
        let raisenull = raiseNullExInstr lv i  in
        let changed = !changesPValue in
        match changed with
          true -> print_string " pointer's value is changed \n ";  false
-       | false -> (print_string (" raise null ex instructions : ceshi , "^ string_of_bool raisenull ^"\n")); if raisenull then true else raiseNullExInstrs lv rest
+       | false -> (print_string (" raise null ex instructions :   "^ string_of_bool raisenull ^"\n")); if raisenull then true else raiseNullExInstrs lv rest
      )
 
 and  raiseNullExStmt (lv : lval) (stm: stmt) : bool =
