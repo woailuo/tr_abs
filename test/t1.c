@@ -16,21 +16,21 @@ int main()
   if(q)
     {
 
-      if(c>1) // raiseNullExExpr (BinOp(..)) (...)
-        {
-          /* q = r; */
-          /* printf("%d\n", conn->num); */
-          /* f(free); */
-          printf("%x\n",q->f);
-          /* q =(int *)malloc(sizeof(int)); */
-          /* q = func(*q); */
-          /* int m = *q; */
-          /* printf("%x\n",*q); */
-          int m = *q;
-        }
-
-      free(q);
-
+      /* if(c>1) // raiseNullExExpr (BinOp(..)) (...) */
+      /*   { */
+      /*     /\* q = r; *\/ */
+      /*     /\* printf("%d\n", conn->num); *\/ */
+      /*     /\* f(free); *\/ */
+      /*     printf("%x\n",q->f); */
+      /*     /\* q =(int *)malloc(sizeof(int)); *\/ */
+      /*     /\* q = func(*q); *\/ */
+      /*     /\* int m = *q; *\/ */
+      /*     /\* printf("%x\n",*q); *\/ */
+      /*     int m = *q; */
+      /*   } */
+      int *m = q;
+      free(m);
+      /* free(q); */
     }
 
   /*
