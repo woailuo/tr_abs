@@ -7,16 +7,17 @@ let parseOneFile (fname: string) : C.file =
   Rmtmps.removeUnusedTemps cil;
   cil
 
-let main (): unit =
+let  rec main (): unit =
   C.print_CIL_Input := true;
   C.lineLength := 100000;
   C.warnTruncate := false;
   E.colorFlag := true;
   Cabs2cil.doCollapseCallCast := true;
 
+  try
   let fname = Sys.argv.(1) in (* file name *)
   let file =  parseOneFile fname in
-  let fnum = Sys.argv.(2) in (* 1: trans and abstract  ;     2 : abstract *)
+  let fnum = Sys.argv.(2) in (* 1: trans and abstract  ;     2 : abstract only *)
   (
     match fnum with
       "1" ->(   Trans.transfor(file);  Abs.abstract (file);
@@ -27,7 +28,11 @@ let main (): unit =
               with
                 _ -> print_string " \n Couldn't open file \n"  )
     | "2" -> Abs.abstract (file)
-    | _ -> print_string " please input number 1 or 2 after file name \n"
+    | _ -> print_string " please input number 1 or 2 after file name \n";
   )
+  with
+    Invalid_argument str ->  print_string str;
+                            print_string " :  please input file name and number 1 or 2 \n";
+  | _ -> print_string " Error: at main.ml file \n"
 
 let _ = main ();;
