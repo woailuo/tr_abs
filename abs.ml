@@ -132,4 +132,4 @@ let abstract (f : file) : unit =
     printfuns funclist.contents; print_newline ();
 
       with
-    _ -> print_string "Error: tut1.ml"; print_newline ()
+    _ -> print_string "Error: abs.ml"; print_newline ()

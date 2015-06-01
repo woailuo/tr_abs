@@ -318,11 +318,13 @@ and analyStmts (s : stmt) : unit =
        match ispointer with
        false -> print_string " if-guard is not a pointer 1 \n"
        | true -> let b = raiseNullExStmts lv tb.bstmts in
-                 match b with
-                   true -> (s.skind <- Block tb);
+               (  match (b,!changesPValue) with
+                   (true, false) ->
+                   (s.skind <- Block tb);
                            print_string " Can Do Transformation on this statement \n ";
                            (analyBlock tb);
-                 | false -> print_string " Cannot Do Transformation on this statement \n"
+                  | _  -> print_string " Cannot Do Transformation on this statement \n"
+               )
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : simple pointer \n";
