@@ -2,7 +2,6 @@ open Cil
 
 let changesPValue = ref false
 
-
 let rec getVarinfoName (expr : exp) : string =
   match expr with
     Lval ( Var a, _ ) -> ( print_string (a.vname ^ "\n") );  a.vname
@@ -21,8 +20,8 @@ and contains (lvs1:string) (lns2:string) : bool =
     )
   else false
 
-and compareOffset (lvo: offset) (lno : offset) : bool =
-    let b = (lvo = lno) in b
+(* and compareOffset (lvo: offset) (lno : offset) : bool = *)
+(*     let b = (lvo = lno) in b *)
 
 and getOffset (offset : offset):string =
   match offset with
@@ -358,19 +357,23 @@ and analyStmts (s : stmt) : unit =
          false ->  print_string " if-guard is not a pointer  2 \n"
        | true ->  (* does next statement raise null exception ?  obtain the next instruction or statement*)
           print_string " go into deeper and the inner is NOT NIL \n ";
-          let b = raiseNullExStmts lv tb.bstmts in
           let c =
            (
             match tb.bstmts with
               [] -> false
             | stm :: rest -> isNextStmRaiseNull lv stm
            ) in
-          print_string ( " next close raise null exception : " ^ string_of_bool c ^" \n");
-          ( match b&&c with
-            true -> (s.skind <- Block tb);
-                    print_string " Can Do Transformation on this statement : complicated pointer \n ";
-                           (analyBlock tb);
-                 | false -> print_string " Cannot Do Transformation on this statement : complicated pointerv\n" )
+          if c then
+            ( let b = raiseNullExStmts lv tb.bstmts in
+              if b then  (
+                (s.skind <- Block tb);
+                print_string " Can Do Transformation on this statement : complicated pointer \n ";
+                (analyBlock tb) )
+              else
+                print_string " Cannot Do Transformation on this statement : complicated pointer\n"
+            )
+          else print_string " next close instruction does not raise exception \n\
+                                      Cannot Do Transformation on this statement: complicated pointer \n"
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : complicated pointer \n";
