@@ -2,7 +2,8 @@ open Cil
 
 let changesPValue = ref false
 
-let rec getVarinfoName (expr : exp) : string = (* conn ->age *)
+
+let rec getVarinfoName (expr : exp) : string =
   match expr with
     Lval ( Var a, _ ) -> ( print_string (a.vname ^ "\n") );  a.vname
   | Lval(Mem e ,_) -> (print_string " get info name : : ") ;  getVarinfoName e
@@ -19,21 +20,22 @@ and contains (lvs1:string) (lns2:string) : bool =
       if lvs1 = newlnstr then true else false
     )
   else false
+
 and compareOffset (lvo: offset) (lno : offset) : bool =
-  let b = (lvo = lno) in b
+    let b = (lvo = lno) in b
 
 and getOffset (offset : offset):string =
   match offset with
   NoOffset -> ""
   | Field(finfo, NoOffset) -> finfo.fname
   | Field(finfo, foffset) -> finfo.fname ^ "->"^getOffset foffset
-  | _ -> print_string " get offset other string : \n"; ""
+  | _ -> print_string " other offset string : \n"; ""
 
 and getStructure (expr : exp) : string =
-  print_string " match expr : other is emp \n";
+  print_string " start analyzing stucture  by expression \n";
   match expr with
      Lval (Var vinfo, _) -> vinfo.vname
-   | Lval (Mem lve, NoOffset) -> "*" ^ getStructure lve
+   | Lval (Mem lve, NoOffset) -> "*" ^( getStructure lve )
    | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
       (getStructure lve ) ^ "->"^ ffinfo.fname
    | Lval (Mem lve, Field (ffinfo, foffset)) ->
@@ -52,10 +54,24 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
                                       (Var lvinfo,_) -> if lvinfo.vname = vinfo.vname then true else false
                                     | _ -> false
                                   )
-  | Lval((Mem e, NoOffset) as ln) -> print_string " compare here 2 \n";
-     (        match (ln = lv) with
-         true -> print_string " may raise null exception 1 \n "; true
-       | false -> print_string " error here \n" ;  compareLval lv e
+  | Lval((Mem e, NoOffset) as ln) -> print_string " compare here 2 \n"; (* *(p, p->f->q)*)
+     (
+       match lv with
+         (Var vinfo, _) ->
+         (
+         let vname = vinfo.vname in
+         let lnname = getStructure expr in
+         let b = contains vname lnname in
+         print_string (" compare when var vinfo :  " ^string_of_bool b ^"\n");
+         b
+         )
+       | (Mem lve, NoOffset) -> print_string " m nooffse \n" ;
+         let lvstr = getStructure lve in
+         let lnstr = getStructure e in
+         let b = contains lvstr lnstr in
+        print_string (" compare:  " ^string_of_bool b  ^"\n");    b
+       | (Mem lve, Field (ffinfo, foffset)) -> print_string " m f \n" ; false
+       | (Mem lve, Index _) -> print_string " m index \n"; false
      )
   | Lval((Mem e, Field(fdinfo, offset) ) as ln) ->
      (
@@ -153,7 +169,7 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
                             print_string (" expr end " ^string_of_bool b2^ "\n" );
                             b1 || b2
    | Call(_, Lval( Var a,NoOffset), [e], loc) when a.vname = "free" ->
-      print_string (getStructure e);
+      print_string (" Free ("^getStructure e ^ ") \n");
       (print_string " start free null exce  \n ");
       ( print_string " call var , no offset , free function \n ");
       let b1 = (raiseFreeNullEx lv e) in
@@ -263,30 +279,36 @@ and isPointer (lv: lval) (n : int): bool =
       print_string (" n  = " ^ string_of_int n ^ " \n ");
       if nums > n then true else false
     )
-  | (Mem e, Field(fdinfo, offset)) -> (*  p->q->r *)
-     isPointer_Offset fdinfo offset
-
+  | (Mem e, Field(fdinfo, offset)) ->
+    let (returnFinfo, b) = isPointer_Offset fdinfo offset in
+    (
+      match n,b with
+          0 , b -> b (* p -> q ->r *)
+        | _, true -> let dnum = derefPointer fdinfo.ftype in
+                          if dnum > n then true else false (* *(p->q),*)
+        | _ , false -> false
+    )
   | (Mem e, NoOffset) -> (* **p, *(p->q) *)
      (
-       print_string "  this is a complicated pointer \n";
+       print_string ( "  this is a complicated pointer : *("^ getStructure e ^") \n");
        match e with
          Lval ( (Var vi, _)  as lv2) -> isPointer lv2 (n+1)
        | Lval ( (Mem e, NoOffset) as lv2 ) -> isPointer lv2 (n+1)
-       | Lval((Mem e, offset)as lv2) -> isPointer lv2 (n+1)
+       | Lval((Mem e, offset)as lv2) ->  isPointer lv2 (n+1)
        | _ ->  print_string " ceshi 3 \n" ; true
      )
   | _ -> print_string " other pointer or not \n"; false
 
-and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) : bool = (* p->q, check if q has offset and the offset is pointer; q has no offset, then q should be a pointer *)
+and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) :(fieldinfo * bool) = (* p->q, check if q has offset and the offset is pointer; q has no offset, then q should be a pointer *)
   match ofs with
       NoOffset ->
       (
         match fdinfo.ftype with
-              TPtr _ ->( print_string ( fdinfo.fname ^"  is a pointer : \n " )); true
-            | _ -> (print_string (fdinfo.fname ^ " is not a pointer \n")); false
+              TPtr _ ->( print_string ( fdinfo.fname ^"  is a pointer : \n " )); (fdinfo,true)
+            | _ -> (print_string (fdinfo.fname ^ " is not a pointer \n")); (fdinfo,false)
       )
     | Field (fd_info, off_set) -> isPointer_Offset fd_info off_set
-    | _ -> print_string " array index offset \n"; false
+    | _ -> print_string " array index offset \n"; (fdinfo,false)
 
 and isNextStmRaiseNull (lv:lval) (s:stmt) =
   match s.skind with

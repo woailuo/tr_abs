@@ -30,23 +30,18 @@
  * http://www.oberhumer.com/opensource/lzop/
  */
 
-/* #ifdef STATIC */
-/* #include "lzo/lzo1x_decompress_safe.c" */
-/* #else */
-/* #include "linux/decompress/unlzo.h" */
-/* /\* #endif *\/ */
+#ifdef STATIC
+#include "lzo/lzo1x_decompress_safe.c"
+#else
+#include <linux/decompress/unlzo.h>
+#endif
 
-/* #include "linux/types.h" */
-/* #include "linux/lzo.h" */
-/* #include "linux/decompress/mm.h" */
+#include <linux/types.h>
+#include <linux/lzo.h>
+#include <linux/decompress/mm.h>
 
-/* #include "linux/compiler.h" */
-/* #include "asm/unaligned" */
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <linux/compiler.h>
+#include <asm/unaligned.h>
 
 static const unsigned char lzop_magic[] = {
 	0x89, 0x4c, 0x5a, 0x4f, 0x00, 0x0d, 0x0a, 0x1a, 0x0a };
@@ -55,29 +50,15 @@ static const unsigned char lzop_magic[] = {
 #define HEADER_HAS_FILTER      0x00000800L
 #define HEADER_SIZE_MIN       (9 + 7     + 4 + 8     + 1       + 4)
 #define HEADER_SIZE_MAX       (9 + 7 + 1 + 8 + 8 + 4 + 1 + 255 + 4)
-#define  u8 int
-#define  u16 int
-#define  u32 int
-#define  size_t  int
 
-int get_unaligned_be16(int *p);
-int get_unaligned_be32(int *p);
-void unlikely(int);
-
-void lzo1x_worst_compress();
-void lzo1x_decompress_safe(int * in_buf, int,
-						int, void *);
-int LZO_E_OK;
-
-int Num = 2;
-int parse_header(u8 *input, long *skip, long in_len)
+STATIC inline long INIT parse_header(u8 *input, long *skip, long in_len)
 {
 	int l;
 	u8 *parse = input;
 	u8 *end = input + in_len;
 	u8 level = 0;
 	u16 version;
- 
+
 	/*
 	 * Check that there's enough input to possibly have a valid header.
 	 * Then it is possible to parse several fields until the minimum
@@ -127,7 +108,7 @@ int parse_header(u8 *input, long *skip, long in_len)
 	return 1;
 }
 
-int  main(u8 *input, long in_len,
+STATIC int INIT unlzo(u8 *input, long in_len,
 				long (*fill)(void *, unsigned long),
 				long (*flush)(void *, unsigned long),
 				u8 *output, long *posp,
@@ -151,8 +132,6 @@ int  main(u8 *input, long in_len,
 			error("Could not allocate output buffer");
 			goto exit;
 		}
-              Num=Num -1;
-              assert(Num >=0);
 	}
 
 	if (input && fill) {
@@ -164,13 +143,11 @@ int  main(u8 *input, long in_len,
 		error("NULL input pointer and missing fill function");
 		goto exit_1;
 	} else {
-		in_buf = malloc(0);
+		in_buf = malloc(lzo1x_worst_compress(LZO_BLOCK_SIZE));
 		if (!in_buf) {
 			error("Could not allocate input buffer");
 			goto exit_1;
 		}
-Num=Num -1;
-assert (Num >=0);
 	}
 	in_buf_save = in_buf;
 
@@ -285,7 +262,7 @@ assert (Num >=0);
 			*posp += src_len + 12;
 
 		in_buf += src_len;
- 		in_len -= src_len;
+		in_len -= src_len;
 		if (fill) {
 			/*
 			 * If there happens to still be unused data left in
@@ -295,7 +272,6 @@ assert (Num >=0);
 			if (in_len > 0)
 				for (skip = 0; skip < in_len; ++skip)
 					in_buf_save[skip] = in_buf[skip];
-
 			in_buf = in_buf_save;
 		}
 	}
@@ -304,13 +280,11 @@ assert (Num >=0);
 exit_2:
 	if (!input)
 		free(in_buf_save);
-        Num=Num + 1;
 exit_1:
 	if (!output)
 		free(out_buf);
-        Num=Num + 1;
 exit:
 	return ret;
 }
 
-/* #define decomress unlzo */
+#define decompress unlzo
