@@ -221,17 +221,17 @@ and  raiseNullExStmt (lv : lval) (stm: stmt) : bool =
   (*                     (\* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *\) *)
   (*                     btb (\* && bfb *\) *)
   (*    ) *)
-  | If(guard, tb,fb,_) when fb.bstmts =[] ->
+  | If(guard, tb,fb,_) ->
      (  print_string "  Start : inner if statement :\n";
         print_string "                if guard part  :\n";
-        let bgd = raiseNullExExpr lv guard in
+        let bgd = raiseNullExExpr lv guard in  (* consider guard part *)
         (print_string( "                end if guard part "^ string_of_bool bgd ^" :\n"));
        match bgd with
          true ->print_string " if-guard part raise null exception \n";  true
-       | false -> let btb =  (raiseNullExStmts lv tb.bstmts ) in  (* consider guard part *)
-                  (* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *)
+       | false -> let btb =  (raiseNullExStmts lv tb.bstmts ) in
+                  let bfb  = (raiseNullExStmts  lv fb.bstmts ) in
                   print_string ( "  End : inner if statement :  " ^ string_of_bool btb  ^ "\n");
-                      btb (* && bfb *)
+                      btb && bfb
     )
   | If _ -> false
   | Loop (b, loc,_,_ ) ->  false
