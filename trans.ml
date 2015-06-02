@@ -42,19 +42,19 @@ and getStructure (expr : exp) : string =
        (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
    | Lval (Mem lve, Index _) -> ""
     | CastE (typ, exp)-> print_string " rasise cast  \n";
-                       pointerType typ;
+      (* pointerType typ; *)
                      getStructure exp
      | _ -> print_string " other is empty string: \n "; ""
 
 and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
   match expr with
-    Lval ((Var vinfo, _) as ln) ->print_string " compare here 1 \n";
+    Lval (Var vinfo, _) ->print_string " compare here 1 \n";
                                   (
                                     match lv with
                                       (Var lvinfo,_) -> if lvinfo.vname = vinfo.vname then true else false
                                     | _ -> false
                                   )
-  | Lval((Mem e, NoOffset) as ln) -> print_string " compare here 2 \n"; (* *(p, p->f->q)*)
+  | Lval(Mem e, NoOffset) -> print_string " compare here 2 \n"; (* *(p, p->f->q)*)
      (
        match lv with
          (Var vinfo, _) ->
@@ -73,7 +73,7 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
        | (Mem lve, Field (ffinfo, foffset)) -> print_string " m f \n" ; false
        | (Mem lve, Index _) -> print_string " m index \n"; false
      )
-  | Lval((Mem e, Field(fdinfo, offset) ) as ln) ->
+  | Lval(Mem e, Field(fdinfo, offset) ) ->
      (
        match lv with
          (Var vinfo, _) ->
