@@ -45,7 +45,7 @@ and deleteCastE (expr : exp) : (exp * bool)=
 and getStructure (expr : exp) : string =
   print_string " start analyzing stucture  by expression \n";
   match expr with
-      Lval (Var vinfo, _) -> (pointerType vinfo.vtype ); vinfo.vname
+      Lval (Var vinfo, _) -> vinfo.vname
    | Lval (Mem lve, NoOffset) -> "*" ^( getStructure lve )
    | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
       (getStructure lve ) ^ "->"^ ffinfo.fname
@@ -53,54 +53,53 @@ and getStructure (expr : exp) : string =
        (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
    | Lval (Mem lve, Index _) -> ""
    | CastE (typ, exp)-> print_string " rasise cast  \n";
-      pointerType typ;
                      getStructure exp
     (*  test *)
-    | Const c  ->  (match c with
-        CInt64 (a,b,c) ->  print_string " cint 64\n";""
-        | CStr s -> print_string (" cstr s : " ^ s ^ " \n");""
-        | CWStr _ -> print_string " cwstr \n";""
-        | CChr _ -> print_string " cchr  \n";""
-        | CReal _ -> print_string " creal \n";""
-        | CEnum _ -> print_string " cenum \n";"" )
-  (* print_string " rasise err const \n";"" *)
-    | SizeOf _ -> print_string " rasise err sizeof\n";""
-    | SizeOfE _ -> print_string " rasise err sizeofe \n";""
-    | SizeOfStr _-> print_string " rasise err sizeofstr\n";""
-    | AlignOf _ -> print_string " rasise err alignof \n";""
-    | AlignOfE _ -> print_string " rasise err alignofe \n";""
-    | UnOp _  -> print_string " rasise err unop \n";""
-    | BinOp  (binop, e1, e2,typ) ->  print_string " Start from binop to test structure \n";  pointerType typ;
-       (
-         match binop with
-             PlusA -> print_string " plusa \n";
-           | PlusPI -> print_string " pluspi \n";
-           | IndexPI -> print_string " indexpi \n";
-           | MinusA -> print_string " minusa \n";
-           | MinusPI -> print_string " minuspi \n";
-           | MinusPP -> print_string " minuspp \n";
-           | Mult -> print_string " mult \n";
-           | Div -> print_string " div \n";
-           | Mod -> print_string " mod  \n";
-           | Shiftlt -> print_string " shiftlt \n";
-           | Shiftrt -> print_string " shiftrt \n";
-           | Lt -> print_string " lt \n";
-           | Gt -> print_string "  gt  \n";
-           | Le -> print_string " le \n";
-           | Ge -> print_string " ge \n";
-           | Eq -> print_string " eq \n";
-           | Ne -> print_string "  ne  \n";
-           | BAnd -> print_string " band \n";
-           | BXor -> print_string " bxor  \n";
-           | BOr -> print_string " bor \n";
-           | LAnd -> print_string " land  \n";
-           | LOr -> print_string " lor  \n";
-       );
-              "  e1 start : "^ (getStructure e1) ^" e1 end \n" ^" e2 start : " ^ getStructure e2 ^ "  e2 end \n";
-    | Question _-> print_string " rasise err question \n";""
-    | AddrOf _  -> print_string " rasise err addrof \n";""
-    | AddrOfLabel _ -> print_string " rasise err addroflabel \n";""
-    | StartOf _ -> print_string " raise err  startof \n"; ""
+  (*   | Const c  ->  (match c with *)
+  (*       CInt64 (a,b,c) ->  print_string " cint 64\n";"" *)
+  (*       | CStr s -> print_string (" cstr s : " ^ s ^ " \n");"" *)
+  (*       | CWStr _ -> print_string " cwstr \n";"" *)
+  (*       | CChr _ -> print_string " cchr  \n";"" *)
+  (*       | CReal _ -> print_string " creal \n";"" *)
+  (*       | CEnum _ -> print_string " cenum \n";"" ) *)
+  (* (\* print_string " rasise err const \n";"" *\) *)
+  (*   | SizeOf _ -> print_string " rasise err sizeof\n";"" *)
+  (*   | SizeOfE _ -> print_string " rasise err sizeofe \n";"" *)
+  (*   | SizeOfStr _-> print_string " rasise err sizeofstr\n";"" *)
+  (*   | AlignOf _ -> print_string " rasise err alignof \n";"" *)
+  (*   | AlignOfE _ -> print_string " rasise err alignofe \n";"" *)
+  (*   | UnOp _  -> print_string " rasise err unop \n";"" *)
+  (*   | BinOp  (binop, e1, e2,typ) ->  print_string " Start from binop to test structure \n";  pointerType typ; *)
+  (*      ( *)
+  (*        match binop with *)
+  (*            PlusA -> print_string " plusa \n"; *)
+  (*          | PlusPI -> print_string " pluspi \n"; *)
+  (*          | IndexPI -> print_string " indexpi \n"; *)
+  (*          | MinusA -> print_string " minusa \n"; *)
+  (*          | MinusPI -> print_string " minuspi \n"; *)
+  (*          | MinusPP -> print_string " minuspp \n"; *)
+  (*          | Mult -> print_string " mult \n"; *)
+  (*          | Div -> print_string " div \n"; *)
+  (*          | Mod -> print_string " mod  \n"; *)
+  (*          | Shiftlt -> print_string " shiftlt \n"; *)
+  (*          | Shiftrt -> print_string " shiftrt \n"; *)
+  (*          | Lt -> print_string " lt \n"; *)
+  (*          | Gt -> print_string "  gt  \n"; *)
+  (*          | Le -> print_string " le \n"; *)
+  (*          | Ge -> print_string " ge \n"; *)
+  (*          | Eq -> print_string " eq \n"; *)
+  (*          | Ne -> print_string "  ne  \n"; *)
+  (*          | BAnd -> print_string " band \n"; *)
+  (*          | BXor -> print_string " bxor  \n"; *)
+  (*          | BOr -> print_string " bor \n"; *)
+  (*          | LAnd -> print_string " land  \n"; *)
+  (*          | LOr -> print_string " lor  \n"; *)
+  (*      ); *)
+  (*             "  e1 start : "^ (getStructure e1) ^" e1 end \n" ^" e2 start : " ^ getStructure e2 ^ "  e2 end \n"; *)
+  (*   | Question _-> print_string " rasise err question \n";"" *)
+  (*   | AddrOf _  -> print_string " rasise err addrof \n";"" *)
+  (*   | AddrOfLabel _ -> print_string " rasise err addroflabel \n";"" *)
+  (*   | StartOf _ -> print_string " raise err  startof \n"; "" *)
       (* test *)
     | _ -> print_string " other is empty string: \n "; ""
 
