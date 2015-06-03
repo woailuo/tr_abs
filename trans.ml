@@ -30,20 +30,79 @@ and getOffset (offset : offset):string =
   | Field(finfo, foffset) -> finfo.fname ^ "->"^getOffset foffset
   | _ -> print_string " other offset string : \n"; ""
 
+and deleteCastE (expr : exp) : (exp * bool)=
+  match expr with
+      CastE (ctype, e) ->
+        (
+          match e with
+              CastE (ctype, e) as e1 -> deleteCastE e1
+            | Lval a  -> Lval a , true
+            | e -> e, false
+         )
+    | Lval a  -> Lval a , true
+    | e -> e,false
+
 and getStructure (expr : exp) : string =
   print_string " start analyzing stucture  by expression \n";
   match expr with
-     Lval (Var vinfo, _) -> vinfo.vname
+      Lval (Var vinfo, _) -> (pointerType vinfo.vtype ); vinfo.vname
    | Lval (Mem lve, NoOffset) -> "*" ^( getStructure lve )
    | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
       (getStructure lve ) ^ "->"^ ffinfo.fname
    | Lval (Mem lve, Field (ffinfo, foffset)) ->
        (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
    | Lval (Mem lve, Index _) -> ""
-    | CastE (typ, exp)-> print_string " rasise cast  \n";
-      (* pointerType typ; *)
+   | CastE (typ, exp)-> print_string " rasise cast  \n";
+      pointerType typ;
                      getStructure exp
-     | _ -> print_string " other is empty string: \n "; ""
+    (*  test *)
+    | Const c  ->  (match c with
+        CInt64 (a,b,c) ->  print_string " cint 64\n";""
+        | CStr s -> print_string (" cstr s : " ^ s ^ " \n");""
+        | CWStr _ -> print_string " cwstr \n";""
+        | CChr _ -> print_string " cchr  \n";""
+        | CReal _ -> print_string " creal \n";""
+        | CEnum _ -> print_string " cenum \n";"" )
+  (* print_string " rasise err const \n";"" *)
+    | SizeOf _ -> print_string " rasise err sizeof\n";""
+    | SizeOfE _ -> print_string " rasise err sizeofe \n";""
+    | SizeOfStr _-> print_string " rasise err sizeofstr\n";""
+    | AlignOf _ -> print_string " rasise err alignof \n";""
+    | AlignOfE _ -> print_string " rasise err alignofe \n";""
+    | UnOp _  -> print_string " rasise err unop \n";""
+    | BinOp  (binop, e1, e2,typ) ->  print_string " Start from binop to test structure \n";  pointerType typ;
+       (
+         match binop with
+             PlusA -> print_string " plusa \n";
+           | PlusPI -> print_string " pluspi \n";
+           | IndexPI -> print_string " indexpi \n";
+           | MinusA -> print_string " minusa \n";
+           | MinusPI -> print_string " minuspi \n";
+           | MinusPP -> print_string " minuspp \n";
+           | Mult -> print_string " mult \n";
+           | Div -> print_string " div \n";
+           | Mod -> print_string " mod  \n";
+           | Shiftlt -> print_string " shiftlt \n";
+           | Shiftrt -> print_string " shiftrt \n";
+           | Lt -> print_string " lt \n";
+           | Gt -> print_string "  gt  \n";
+           | Le -> print_string " le \n";
+           | Ge -> print_string " ge \n";
+           | Eq -> print_string " eq \n";
+           | Ne -> print_string "  ne  \n";
+           | BAnd -> print_string " band \n";
+           | BXor -> print_string " bxor  \n";
+           | BOr -> print_string " bor \n";
+           | LAnd -> print_string " land  \n";
+           | LOr -> print_string " lor  \n";
+       );
+              "  e1 start : "^ (getStructure e1) ^" e1 end \n" ^" e2 start : " ^ getStructure e2 ^ "  e2 end \n";
+    | Question _-> print_string " rasise err question \n";""
+    | AddrOf _  -> print_string " rasise err addrof \n";""
+    | AddrOfLabel _ -> print_string " rasise err addroflabel \n";""
+    | StartOf _ -> print_string " raise err  startof \n"; ""
+      (* test *)
+    | _ -> print_string " other is empty string: \n "; ""
 
 and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
   match expr with
@@ -212,15 +271,6 @@ and  raiseNullExStmt (lv : lval) (stm: stmt) : bool =
   | Instr ins ->  (print_string "  \n Start instructions:  \n");
                   let b =  (raiseNullExInstrs lv ins) in
                    print_string (" \n  End instructions: " ^ string_of_bool b ^" \n"); b
-  (* | If(guard ,tb,fb,_) when (fb.bstmts = [])&&(isSimplePointer guard) -> *)
-  (*    ( *)
-  (*      let bgd = raiseNullExExpr vi guard in *)
-  (*      match bgd with *)
-  (*        true -> true *)
-  (*      | false -> let btb =  (raiseNullExStmts vi tb.bstmts ) in  (\* consider guard part *\) *)
-  (*                     (\* let bfb  = (raiseNullExStmts  vi fb.bstmts ) in *\) *)
-  (*                     btb (\* && bfb *\) *)
-  (*    ) *)
   | If(guard, tb,fb,_) ->
      (  print_string "  Start : inner if statement :\n";
         print_string "                if guard part  :\n";
@@ -233,7 +283,6 @@ and  raiseNullExStmt (lv : lval) (stm: stmt) : bool =
                   print_string ( "  End : inner if statement :  " ^ string_of_bool btb  ^ "\n");
                       btb && bfb
     )
-  | If _ -> false
   | Loop (b, loc,_,_ ) ->  false
   | Return _   | Goto _   | ComputedGoto _   | Break _   | Continue _
   | Switch _   | Block _  | TryFinally _
@@ -255,7 +304,7 @@ and pointerType (vtype:typ) : bool =
     TVoid _   -> print_string " tvoid\n"; false
   | TInt _  -> print_string " tint\n";  false
   | TFloat  _ -> print_string " tfloat\n";  false
-  | TPtr (ptype,attrib) -> true
+  | TPtr (ptype,attrib) -> print_string "pointer type \n"; true
   | TArray _ -> print_string " tvoid\n";  false
   | TFun _ -> print_string " tvoid\n";  false
   | TNamed _  -> print_string " tnamed\n";  false
@@ -377,6 +426,33 @@ and analyStmts (s : stmt) : unit =
      );
      changesPValue:= false;
      print_string " End Analysis if(_,_,_) : complicated pointer \n";
+  | If(BinOp (Ne, e1, e2, typ) , tb, fb, loc) when fb.bstmts=[]  ->
+      let ne1, b1 = deleteCastE e1 in
+      let ne2, b2 = deleteCastE e2 in
+      let b3 =(
+        match b1 with
+            true -> (
+              match ne1 with
+                  Lval a -> isPointer a 0
+                | _ -> false
+            )
+          | false -> false
+      ) in
+      let b4 = (
+        match ne2 with
+            Const _ -> true
+          | _ -> false
+      ) in
+      if b3&&b4 then
+        (match ne1 with
+          Lval lv ->
+            print_string " Start analyzing if (pointer != NULL) statements \n";
+            s.skind <- (If(Lval lv, tb,fb,loc));
+            analyStmts s;
+            print_string " End analyzing if (pointer != NULL) statements \n";
+          | _ ->  print_string " if other statements 2 \n"
+        )
+      else print_string " if other statements 2 \n"
    (* other if statements *)
   | If _ -> print_string " if  other statements \n"
   | Switch(_,b,_,_) -> print_string " switch\n "
