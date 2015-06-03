@@ -35,7 +35,7 @@ and deleteCastE (expr : exp) : (exp * bool)=
       CastE (ctype, e) ->
         (
           match e with
-              CastE (ctype, e) as e1 -> deleteCastE e1
+              CastE _ as e1 -> deleteCastE e1
             | Lval a  -> Lval a , true
             | e -> e, false
          )
@@ -127,7 +127,8 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
          let lnstr = getStructure e in
          let b = contains lvstr lnstr in
         print_string (" compare:  " ^string_of_bool b  ^"\n");    b
-       | (Mem lve, Field (ffinfo, foffset)) -> print_string " m f \n" ; false
+       | (Mem lve, Field (ffinfo, foffset)) -> print_string " m f \n" ; (* lv p->q, ln *(p->q) *)
+         compareLval lv e
        | (Mem lve, Index _) -> print_string " m index \n"; false
      )
   | Lval(Mem e, Field(fdinfo, offset) ) ->
@@ -162,10 +163,10 @@ and raiseNullExExpr (lv : lval ) (expr : exp) : bool = (* conn->age,  *(conn->ag
        print_string (" raise mem : p->f :  " ^ getStructure expr ^ " ; " ^ "\n");
      if (compareLval lv e ) then true else false
   | Lval (Mem e, NoOffset) ->
-     print_string ( " raise mem : *p :"  ^ getVarinfoName e ^ " ; " ^ "\n" );
+    print_string ( " raise mem : *p :"  ^ getStructure expr ^ " ; " ^ "\n" );
        if (compareLval lv e) then true else false
   | Lval (Mem e, _) ->
-     ( print_string( " raise mem no offset :  " ^ getVarinfoName e^ " ; "^" \n" )) ; false
+    ( print_string( " raise mem no offset :  " ^ getStructure expr^ " ; "^" \n" )) ; false
   | Const c  ->  (match c with
                     CInt64 _ -> print_string " cint 64\n";false
                   | CStr s -> print_string (" cstr s : " ^ s ^ " \n");false
@@ -247,7 +248,7 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
       (print_string (" right expression raise null exception  : " ^ string_of_bool b2 ^"\n"));
       (print_string "  End : call functions like : ( *p = func(); m = func(*p); ) \n" );
       b1 || b2
-    | Call (None ,exp,exps,location) ->
+   | Call (None ,exp,exps,location) ->
                                    print_string " Start call exps \n";
                                    let b = (iterRaiseExps lv exps) in
                                    print_string " End of the call exps \n";   b
