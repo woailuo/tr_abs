@@ -117,7 +117,7 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
          (Var vinfo, _) ->
          (
          let vname = vinfo.vname in
-         let lnname = getStructure expr in
+         let lnname = getStructure e in
          let b = contains vname lnname in
          print_string (" compare when var vinfo :  " ^string_of_bool b ^"\n");
          b
