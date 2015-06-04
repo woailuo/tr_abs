@@ -15,10 +15,14 @@ and contains (lvs1:string) (lns2:string) : bool =
   if length2 >=length1 then
     (
       let newlnstr = String.sub lns2 0 length1 in
-      let pstr = String.sub lns2 length1 1 in
-      (  print_string (" post string  : " ^ pstr ^ "\n"););
-      (  print_string (" new string  : " ^ newlnstr ^ "\n"););
-      if (lvs1 = newlnstr) &&(pstr = "" || pstr = "-" || pstr = "*") then true else false
+      (print_string (" new string  : " ^ newlnstr ^ "\n"););
+      if length2 = length1 then (print_string " length is the same \n ";   if (lvs1 = newlnstr)  then true else false)
+      else
+        (
+          let pstr =  String.sub lns2 length1 1 in
+          (  print_string (" post string  : " ^ pstr ^ "\n"););
+          if (lvs1 = newlnstr) &&(pstr = "" || pstr = "-" || pstr = "*") then true else false
+        )
     )
   else false
 
