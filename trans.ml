@@ -2,7 +2,7 @@ open Cil
 
 let changesPValue = ref false
 
-let isPrintStr = false
+let isPrintStr = true
 
 let printStr (str : string) =
   if isPrintStr then (print_string str ) else ()
