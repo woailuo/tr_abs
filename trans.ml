@@ -15,8 +15,10 @@ and contains (lvs1:string) (lns2:string) : bool =
   if length2 >=length1 then
     (
       let newlnstr = String.sub lns2 0 length1 in
+      let pstr = String.sub lns2 length1 1 in
+      (  print_string (" post string  : " ^ pstr ^ "\n"););
       (  print_string (" new string  : " ^ newlnstr ^ "\n"););
-      if lvs1 = newlnstr then true else false
+      if (lvs1 = newlnstr) &&(pstr = "" || pstr = "-" || pstr = "*") then true else false
     )
   else false
 
@@ -227,16 +229,15 @@ and  raiseNullExInstr (lv : lval )  (ins : instr) : bool =
                             print_string (" expr end " ^string_of_bool b2^ "\n" );
                             b1 || b2
    | Call(_, Lval( Var a,NoOffset), [e], loc) when a.vname = "free" ->
-      print_string (" Free ("^getStructure e ^ ") \n");
-      (print_string " start free null exce  \n ");
+         (print_string " start free null exce  \n ");
       ( print_string " call var , no offset , free function \n ");
       let b1 = (raiseFreeNullEx lv e) in
       print_string " complete raise free null exp: lv e \n";
-      let b2 =  (raiseNullExExpr lv e) in
+      (* let b2 =  (raiseNullExExpr lv e) in *)
       (print_string (" raise free null ex : "^ string_of_bool b1 ^" \n"));
-      (print_string (" raise null ex of e when free(e) : "^ string_of_bool b2 ^" \n"));
-      ( print_string " end free null exception \n ");
-      b1 || b2
+      (* (print_string (" raise null ex of e when free(e) : "^ string_of_bool b2 ^" \n")); *)
+      (* ( print_string " end free null exception \n "); *)
+      b1 (* || b2 *)
    | Call (Some ln , _ , exps, loc) when  (not ( raiseNullExExpr lv (Lval ln))) && (compareLval lv  (Lval ln)) -> (* changes p's value *)
            print_string "  functions change value of pointer like : p = functions :   \n";
            (changesPValue := true); false  (* todo *)
