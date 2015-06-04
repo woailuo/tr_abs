@@ -46,12 +46,12 @@ and getStructure (expr : exp) : string =
   print_string " start analyzing stucture  by expression \n";
   match expr with
       Lval (Var vinfo, _) -> vinfo.vname
-   | Lval (Mem lve, NoOffset) -> "*" ^( getStructure lve )
+   | Lval (Mem lve, NoOffset) -> ( getStructure lve ) ^ "*"
    | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
       (getStructure lve ) ^ "->"^ ffinfo.fname
    | Lval (Mem lve, Field (ffinfo, foffset)) ->
        (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
-   | Lval (Mem lve, Index _) -> ""
+   | Lval (Mem lve, Index _) ->print_string " getstructure Index  \n"; ""
    | CastE (typ, exp)-> print_string " rasise cast  \n";
                      getStructure exp
     (*  test *)
@@ -117,7 +117,7 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
          (Var vinfo, _) ->
          (
          let vname = vinfo.vname in
-         let lnname = getStructure e in
+         let lnname = getStructure expr in
          let b = contains vname lnname in
          print_string (" compare when var vinfo :  " ^string_of_bool b ^"\n");
          b
