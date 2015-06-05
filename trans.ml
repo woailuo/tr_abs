@@ -187,15 +187,25 @@ and raiseNullExExpr (lv : lval ) (expr : exp) : bool = (* conn->age,  *(conn->ag
                   | CEnum _ -> printStr " cenum \n";false )
   (* printStr " rasise err const \n";false *)
   | SizeOf _ -> printStr " rasise err sizeof\n";false
-  | SizeOfE _ -> printStr " rasise err sizeofe \n";false
+  | SizeOfE e1 -> printStr " rasise err sizeofe \n";
+    let b = raiseNullExExpr lv e1 in
+    b
   | SizeOfStr _-> printStr " rasise err sizeofstr\n";false
   | AlignOf _ -> printStr " rasise err alignof \n";false
-  | AlignOfE _ -> printStr " rasise err alignofe \n";false
-  | UnOp _  -> printStr " rasise err unop \n";false
+  | AlignOfE e1 -> printStr " rasise err alignofe \n";
+    let b = raiseNullExExpr lv e1 in
+    b
+  | UnOp (unop, e1, typ)  ->( printStr " rasise err unop \n");
+    let b = raiseNullExExpr lv e1 in
+    b
   | BinOp  (binop, e1, e2,typ) ->  let b1 = raiseNullExExpr lv e1 in
                                    let b2 = raiseNullExExpr lv e2 in
                                    b1 || b2
-  | Question _-> printStr " rasise err question \n";false
+  | Question (e1, e2, e3, typ)-> printStr " rasise err question \n";
+    let b1 = raiseNullExExpr lv e1 in
+    let b2 = raiseNullExExpr lv e2 in
+    let b3 = raiseNullExExpr lv e3 in
+    b1 || b2 || b3
   | CastE  (ctype,cexp )->  raiseNullExExpr lv cexp
   | AddrOf _  -> printStr " rasise err addrof \n";false
   | AddrOfLabel _ -> printStr " rasise err addroflabel \n";false
@@ -464,6 +474,17 @@ and analyStmts (s : stmt) : unit =
         )
       else printStr " if other statements (p != NULL) \n"
    (* other if statements *)
+  | If (expr, tb, fb, loc) ->
+    ( match expr with
+      | Lval lv -> ( printStr( " raise array list  :  " ^ getStructure expr^ " ; "^" \n" )) ;
+        (
+          match lv with
+              (Var a, _ ) -> printStr " var a \n";
+            | (Mem a, _) -> printStr " mem a \n";
+        )
+      | StartOf _ -> printStr " raise err  startof \n";
+      | _ -> print_string " ddddd \n"
+    )
   | If _ -> print_string " if  other statements \n"
   | Switch(_,b,_,_) -> printStr " switch\n "
   | Loop(b,_,_,_) -> analyBlock b
