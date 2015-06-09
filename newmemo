@@ -1,0 +1,77 @@
+(* https://github.com/felixangell/alloy/blob/master/src/alloyc.c*)
+
+void destroyAlloyCompiler(AlloyCompiler *self) {
+        if (self) {
+                if (self->lexer) destroyLexer(self->lexer);
+                if (self->parser) destroyParser(self->parser);
+n//		if (self->compiler) destroyCompiler(self->compiler);
+                destroyVector(self->sourceFiles);
+                free(self);
+                verboseModeMessage("Destroyed Alloy Compiler");
+        }
+}
+
+(* https://github.com/luna/luna/blob/master/deps/linenoise/linenoise.c *)
+static void freeHistory(void) {
+    if (history) {
+        int j;
+
+        for (j = 0; j < history_len; j++)
+            free(history[j]);
+        free(history);
+    }
+}
+
+int linenoiseHistorySetMaxLen(int len) {
+    char **new;
+
+    if (len < 1) return 0;
+    if (history) {
+        int tocopy = history_len;
+
+        new = malloc(sizeof(char*)*len);
+        if (new == NULL) return 0;
+        if (len < tocopy) tocopy = len;
+        memcpy(new,history+(history_max_len-tocopy), sizeof(char*)*tocopy);
+        free(history);
+        history = new;
+    }
+    history_max_len = len;
+    if (history_len > history_max_len)
+        history_len = history_max_len;
+    return 1;
+}
+
+static void freeCompletions(linenoiseCompletions *lc) {
+    size_t i;
+    for (i = 0; i < lc->len; i++)
+        free(lc->cvec[i]);
+    if (lc->cvec != NULL)
+        free(lc->cvec);
+}
+
+
+(* https://github.com/riolet/nope.c/blob/master/nope.c *)
+void clear_connection_baggage(FdData * fdDataList, int fd, fd_set * pMaster)
+{
+    /*Todo: Merge with shutdown_connection() */
+    if (fdDataList[fd].state != STATE_PRE_REQUEST)
+        free_fd_data(&fdDataList[fd]);
+    fdDataList[fd].state = STATE_PRE_REQUEST;
+
+    int result;
+    if (pMaster != NULL) {
+        dbgprintf("Clearing connection baggage for %d\n", fd);
+        FD_CLR(fd, pMaster);    /*In Select mode only */
+        result = shutdown(fd, 2);
+        if (result == -1) {
+            perror("shutdown");
+        }
+        dbgprintf("Shutdown for %d is %d\n", fd, result);
+    }
+    result = close(fd);
+    if (result == -1) {
+        perror("close");
+    }
+
+}
