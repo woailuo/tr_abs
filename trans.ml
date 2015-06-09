@@ -15,7 +15,7 @@ let rec getVarinfoName (expr : exp) : string =
 
 and contains (lvs1:string) (lns2:string) : bool =
   let length1= String.length lvs1 in
-  printStr (" contains : " ^ lvs1 ^" ;   "^ lns2 ^ "\n");
+  printStr (" contains : fist str: " ^ lvs1 ^"  ; snd str:    "^ lns2 ^ "\n");
   let length2= String.length lns2 in
   if length2 >=length1 then
     (
@@ -26,7 +26,7 @@ and contains (lvs1:string) (lns2:string) : bool =
         (
           let pstr =  String.sub lns2 length1 1 in
           (  printStr (" post string  : " ^ pstr ^ "\n"););
-          if (lvs1 = newlnstr) &&(pstr = "" || pstr = "-" || pstr = "*") then true else false
+          if (lvs1 = newlnstr) &&(pstr = "" || pstr = "-" || pstr = "*" || pstr = "[") then true else false
         )
     )
   else false
@@ -36,10 +36,10 @@ and contains (lvs1:string) (lns2:string) : bool =
 
 and getOffset (offset : offset):string =
   match offset with
-  NoOffset -> ""
+    NoOffset -> printStr " get offset : no offset \n";  ""
   | Field(finfo, NoOffset) -> finfo.fname
   | Field(finfo, foffset) -> finfo.fname ^ "->"^getOffset foffset
-  | _ -> printStr " other offset string : \n"; ""
+  | Index(e, offset) -> (getStructure e) ^ (getOffset offset)
 
 and deleteCastE (expr : exp) : (exp * bool)=
   match expr with
@@ -56,67 +56,78 @@ and deleteCastE (expr : exp) : (exp * bool)=
 and getStructure (expr : exp) : string =
   printStr " start analyzing stucture  by expression \n";
   match expr with
-      Lval (Var vinfo, _) -> vinfo.vname
-   | Lval (Mem lve, NoOffset) -> ( getStructure lve ) ^ "*"
-   | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
-      (getStructure lve ) ^ "->"^ ffinfo.fname
-   | Lval (Mem lve, Field (ffinfo, foffset)) ->
-       (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
-   | Lval (Mem lve, Index _) ->printStr " getstructure Index  \n"; ""
-   | CastE (typ, exp)-> printStr " rasise cast  \n";
-                     getStructure exp
-    (*  test *)
-  (*   | Const c  ->  (match c with *)
-  (*       CInt64 (a,b,c) ->  printStr " cint 64\n";"" *)
-  (*       | CStr s -> printStr (" cstr s : " ^ s ^ " \n");"" *)
-  (*       | CWStr _ -> printStr " cwstr \n";"" *)
-  (*       | CChr _ -> printStr " cchr  \n";"" *)
-  (*       | CReal _ -> printStr " creal \n";"" *)
-  (*       | CEnum _ -> printStr " cenum \n";"" ) *)
-  (* (\* printStr " rasise err const \n";"" *\) *)
-  (*   | SizeOf _ -> printStr " rasise err sizeof\n";"" *)
-  (*   | SizeOfE _ -> printStr " rasise err sizeofe \n";"" *)
-  (*   | SizeOfStr _-> printStr " rasise err sizeofstr\n";"" *)
-  (*   | AlignOf _ -> printStr " rasise err alignof \n";"" *)
-  (*   | AlignOfE _ -> printStr " rasise err alignofe \n";"" *)
-  (*   | UnOp _  -> printStr " rasise err unop \n";"" *)
-  (*   | BinOp  (binop, e1, e2,typ) ->  printStr " Start from binop to test structure \n";  pointerType typ; *)
-  (*      ( *)
-  (*        match binop with *)
-  (*            PlusA -> printStr " plusa \n"; *)
-  (*          | PlusPI -> printStr " pluspi \n"; *)
-  (*          | IndexPI -> printStr " indexpi \n"; *)
-  (*          | MinusA -> printStr " minusa \n"; *)
-  (*          | MinusPI -> printStr " minuspi \n"; *)
-  (*          | MinusPP -> printStr " minuspp \n"; *)
-  (*          | Mult -> printStr " mult \n"; *)
-  (*          | Div -> printStr " div \n"; *)
-  (*          | Mod -> printStr " mod  \n"; *)
-  (*          | Shiftlt -> printStr " shiftlt \n"; *)
-  (*          | Shiftrt -> printStr " shiftrt \n"; *)
-  (*          | Lt -> printStr " lt \n"; *)
-  (*          | Gt -> printStr "  gt  \n"; *)
-  (*          | Le -> printStr " le \n"; *)
-  (*          | Ge -> printStr " ge \n"; *)
-  (*          | Eq -> printStr " eq \n"; *)
-  (*          | Ne -> printStr "  ne  \n"; *)
-  (*          | BAnd -> printStr " band \n"; *)
-  (*          | BXor -> printStr " bxor  \n"; *)
-  (*          | BOr -> printStr " bor \n"; *)
-  (*          | LAnd -> printStr " land  \n"; *)
-  (*          | LOr -> printStr " lor  \n"; *)
-  (*      ); *)
-  (*             "  e1 start : "^ (getStructure e1) ^" e1 end \n" ^" e2 start : " ^ getStructure e2 ^ "  e2 end \n"; *)
-  (*   | Question _-> printStr " rasise err question \n";"" *)
-  (*   | AddrOf _  -> printStr " rasise err addrof \n";"" *)
-  (*   | AddrOfLabel _ -> printStr " rasise err addroflabel \n";"" *)
-  (*   | StartOf _ -> printStr " raise err  startof \n"; "" *)
+  | Lval(Var vinfo, Index (e, offset)) -> (vinfo.vname) ^ (getStructure e)^ (getOffset offset)
+  | Lval (Var vinfo, _) -> vinfo.vname
+  | Lval (Mem lve, NoOffset) -> ( getStructure lve ) ^ "*"
+  | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
+     (getStructure lve ) ^ "->"^ ffinfo.fname
+  | Lval (Mem lve, Field (ffinfo, foffset)) ->
+     (getStructure lve ) ^ "->"^ ffinfo.fname ^ "->"^getOffset foffset
+  | Lval (Mem lve, Index _) ->printStr " getstructure Index  \n"; ""
+  | CastE (typ, exp)-> printStr " rasise cast  \n";
+                        getStructure exp
+   | BinOp  (binop, e1, e2,typ) ->  printStr " Start from binop to test structure \n";
+                                    (getStructure e1) ^ (getStructure e2)
+   | Const c  ->  (match c with
+                     CInt64 (a,b,c) ->  printStr " cint 64\n";  "[" ^(string_of_int (i64_to_int a)) ^"]"
+                   | CStr s -> printStr (" cstr s : " ^ s ^ " \n");""
+                   | CWStr _ -> printStr " cwstr \n";""
+                   | CChr _ -> printStr " cchr  \n";""
+                   | CReal _ -> printStr " creal \n";""
+                   | CEnum _ -> printStr " cenum \n";"" )
+   (*  test *)
+  (* printStr " rasise err const \n";"" *)
+    | SizeOf _ -> printStr " raise err sizeof\n";""
+    | SizeOfE _ -> printStr " raise err sizeofe \n";""
+    | SizeOfStr _-> printStr " raise err sizeofstr\n";""
+    | AlignOf _ -> printStr " raise err alignof \n";""
+    | AlignOfE _ -> printStr " raise err alignofe \n";""
+    | UnOp _  -> printStr " raise err unop \n";""
+    (* | BinOp  (binop, e1, e2,typ) ->  printStr " Start from binop to test structure \n";  pointerType typ; *)
+    (*    ( *)
+    (*      match binop with *)
+    (*          PlusA -> printStr " plusa \n"; *)
+    (*        | PlusPI -> printStr " pluspi \n"; *)
+    (*        | IndexPI -> printStr " indexpi \n"; *)
+    (*        | MinusA -> printStr " minusa \n"; *)
+    (*        | MinusPI -> printStr " minuspi \n"; *)
+    (*        | MinusPP -> printStr " minuspp \n"; *)
+    (*        | Mult -> printStr " mult \n"; *)
+    (*        | Div -> printStr " div \n"; *)
+    (*        | Mod -> printStr " mod  \n"; *)
+    (*        | Shiftlt -> printStr " shiftlt \n"; *)
+    (*        | Shiftrt -> printStr " shiftrt \n"; *)
+    (*        | Lt -> printStr " lt \n"; *)
+    (*        | Gt -> printStr "  gt  \n"; *)
+    (*        | Le -> printStr " le \n"; *)
+    (*        | Ge -> printStr " ge \n"; *)
+    (*        | Eq -> printStr " eq \n"; *)
+    (*        | Ne -> printStr "  ne  \n"; *)
+    (*        | BAnd -> printStr " band \n"; *)
+    (*        | BXor -> printStr " bxor  \n"; *)
+    (*        | BOr -> printStr " bor \n"; *)
+    (*        | LAnd -> printStr " land  \n"; *)
+    (*        | LOr -> printStr " lor  \n"; *)
+    (*    ); *)
+    (*           "  e1 start : "^ (getStructure e1) ^" e1 end ; " ^" e2 start : " ^ getStructure e2 ^ "  e2 end \n"; *)
+    | Question _-> printStr " rasise err question \n";""
+    | AddrOf _  -> printStr " rasise err addrof \n";""
+    | AddrOfLabel _ -> printStr " rasise err addroflabel \n";""
+    | StartOf _ -> printStr " raise err  startof \n"; ""
       (* test *)
     | _ -> printStr " other is empty string: \n "; ""
 
 and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
   match expr with
-    Lval (Var vinfo, _) ->printStr " compare here 1 \n";
+    Lval (Var vinfo, Index(e, offset)) ->
+    (
+      let lvstr = getStructure (Lval lv) in
+      let lnstr = getStructure expr in
+      let b = contains lvstr lnstr in
+      printStr " compare array : ";
+      b
+    )
+  | Lval (Var vinfo, _) ->printStr " compare here 1 \n";
                                   (
                                     match lv with
                                       (Var lvinfo,_) -> if lvinfo.vname = vinfo.vname then true else false
@@ -165,6 +176,13 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
        | (Mem lve, Index _) -> printStr " m index \n"; false
      )
   | CastE (typ, newexp) -> compareLval lv newexp
+  | BinOp (binop, e1, e2, typ) when (pointerType typ) -> printStr " this is a bin op \n ";
+                                                         (
+                                                           let lvstr = getStructure (Lval lv) in
+                                                           let lnstr = (getStructure e1 ) ^ (getStructure e2) in
+                                                           let b = contains lvstr lnstr in
+                                                           b
+                                                         )
   | _ -> printStr " other , unknown \n"; false
 
 and raiseNullExExpr (lv : lval ) (expr : exp) : bool = (* conn->age,  *(conn->age) *)
@@ -325,8 +343,8 @@ and pointerType (vtype:typ) : bool =
   | TInt _  -> printStr " tint\n";  false
   | TFloat  _ -> printStr " tfloat\n";  false
   | TPtr (ptype,attrib) -> printStr "pointer type \n"; true
-  | TArray _ -> printStr " tvoid\n";  false
-  | TFun _ -> printStr " tvoid\n";  false
+  | TArray (typ, eop, attr) -> pointerType typ
+  | TFun _ -> printStr " tfun\n";  false
   | TNamed _  -> printStr " tnamed\n";  false
   | TComp _ -> printStr " tcomp\n";  false
   | TEnum _ -> printStr " tenum\n";  false
@@ -340,7 +358,8 @@ and derefPointer(vtype:typ)  : int =
 
 and isPointer (lv: lval) (n : int): bool =
   match lv with
-    (Var vi, _) -> (* p, or v *)
+    (Var a, Index (expr, offset)) -> pointerType a.vtype;
+  | (Var vi, _) -> (* p, or v *)
     (
       let nums = derefPointer vi.vtype in
       printStr (" derefnums = " ^ string_of_int nums ^ " ; ");
@@ -365,7 +384,7 @@ and isPointer (lv: lval) (n : int): bool =
        | Lval((Mem e, offset)as lv2) ->  isPointer lv2 (n+1)
        | _ ->  printStr " ceshi 3 \n" ; true
      )
-  | _ -> printStr " other pointer or not \n"; false
+  | _  -> printStr " other pointer or not \n"; false
 
 and isPointer_Offset (fdinfo : fieldinfo) (ofs : offset) :(fieldinfo * bool) = (* p->q, check if q has offset and the offset is pointer; q has no offset, then q should be a pointer *)
   match ofs with
@@ -474,17 +493,23 @@ and analyStmts (s : stmt) : unit =
         )
       else printStr " if other statements (p != NULL) \n"
    (* other if statements *)
-  | If (expr, tb, fb, loc) ->
-    ( match expr with
-      | Lval lv -> ( printStr( " raise array list  :  " ^ getStructure expr^ " ; "^" \n" )) ;
-        (
-          match lv with
-              (Var a, _ ) -> printStr " var a \n";
-            | (Mem a, _) -> printStr " mem a \n";
-        )
-      | StartOf _ -> printStr " raise err  startof \n";
-      | _ -> print_string " ddddd \n"
-    )
+  | If (Lval((Var a, Index _) as lv), tb, fb, loc) when fb.bstmts = [] ->
+     print_string " Start Analysis: Array \n";
+     let ispointer = isPointer lv 0 in (* here must 0 *)
+     (
+       match ispointer with
+       false -> print_string " if-guard is not a pointer  \n"
+       | true -> let b = raiseNullExStmts lv tb.bstmts in
+               (  match (b,!changesPValue) with
+                   (true, false) ->
+                   (s.skind <- Block tb);
+                           print_string " Can Do Tr \n ";
+                           (analyBlock tb);
+                  | _  -> print_string " Cannot Do Tr \n"
+               )
+     );
+     changesPValue:= false;
+     print_string " End Analysis: Array \n";
   | If _ -> print_string " if  other statements \n"
   | Switch(_,b,_,_) -> printStr " switch\n "
   | Loop(b,_,_,_) -> analyBlock b
