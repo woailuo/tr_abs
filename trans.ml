@@ -73,7 +73,6 @@ and compareLval (lv : lval) (expr : exp) :bool = (* conn->db, (conn->db)->addr*)
       let lvstr = getStructure (Lval lv) in
       let lnstr = getStructure expr in
       let b = contains lvstr lnstr in
-      printStr " compare array : ";
       b
 
 and raiseNullOffset (lv:lval) (ofs: offset) : bool =
