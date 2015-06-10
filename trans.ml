@@ -31,7 +31,7 @@ and getOffset (offset : offset):string =
   | Field(finfo, NoOffset) -> finfo.fname
   | Field(finfo, foffset) -> finfo.fname ^ "->"^getOffset foffset
   | Index(e, NoOffset) -> "[" ^ (getStructure e)^ "]"
-  | Index(e, inoffset) -> "[" ^ (getStructure e)^ "]"  ^ (getOffset inoffset)  (* todo : e may raise null exception *)
+  | Index(e, inoffset) -> "[" ^ (getStructure e)^ "]"  ^ (getOffset inoffset)
 
 and deleteCastE (expr : exp) : (exp * bool)=
   match expr with
@@ -46,9 +46,9 @@ and deleteCastE (expr : exp) : (exp * bool)=
     | e -> e,false
 
 and getStructure (expr : exp) : string =
-  printStr " start analyzing stucture  by expression \n";
   match expr with
-  | Lval(Var vinfo, Index (e, offset)) -> (vinfo.vname) ^"[" ^(getStructure e)^"]"^ (getOffset offset)
+  | Lval(Var vinfo, Index (e, offset)) ->
+    (vinfo.vname) ^"[" ^(getStructure e)^"]"^ (getOffset offset)
   | Lval (Var vinfo, _) -> vinfo.vname
   | Lval (Mem lve, NoOffset) -> ( getStructure lve ) ^ "*"
   | Lval (Mem lve, Field (ffinfo, NoOffset)) ->
