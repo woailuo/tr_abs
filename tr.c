@@ -977,48 +977,86 @@ unsigned long long
 extern char *suboptarg;
 void *valloc(size_t);
 
-struct Database{
- int** addre;
-};
-struct Connection{
-    struct Database *db;
-  int *age;
-  int year;
-};
-void f(void (*)(unsigned int));
-int func(int);
-int main()
+struct alist { int magic, size; struct alist *next, *last; };
+static struct alist list = { 0, 0, 0, 0 };
+static int mallocs=0;
+static int reallocs=0;
+static int frees=0;
+void *
+acalloc(int size, int count)
 {
-  int ****v;
-  int ***s;
-  int **p;
-  int *q = (int*)malloc(sizeof(int));
-  int *r = (int*)malloc(sizeof(int));
-  *q = 5;
-  p = &q;
-  s = &p;
-  v = &s;
-  int c = 0;
-  scanf("%d",&c);
-  struct Connection *conn = malloc(sizeof(struct Connection));
-  struct Connection *pp;
-  printf("by dot to reference , %d\n",(*conn).year);
-  conn->db = malloc(sizeof(struct Database));
-  conn->db->addre = p;
-  conn->year = 2015;
-  conn->age = (int*)malloc(sizeof(int));
-  *(conn->age) =25;
-  struct Connection *list[3];
-  list[0] = malloc(sizeof(struct Connection));
-  list[0]->db = malloc(sizeof(struct Database));
-  list[0]->year = 0;
-  struct Connection *list2[2][2];
-  list2[0][1] = malloc(sizeof(struct Connection));
-  list2[0][1]->db = malloc(sizeof(struct Database));
-  list2[0][1]->year = 2016;
-  if(p){
-    **p = func(**p);
-    int m = func(**p);
-  }
-  return 0;
+    struct alist *ret = calloc(size + sizeof(struct alist), count);
+    if ( ret ) {
+ ret->magic = 0x1f2e3d4c;
+ ret->size = size * count;
+ if ( list.next ) {
+     ret->next = list.next;
+     ret->last = &list;
+     ret->next->last = ret;
+     list.next = ret;
+ }
+ else {
+     ret->last = ret->next = &list;
+     list.next = list.last = ret;
+ }
+ ++mallocs;
+ return ret+1;
+    }
+    return 0;
+}
+void*
+amalloc(int size)
+{
+    return acalloc(size,1);
+}
+void
+afree(void *ptr)
+{
+    struct alist *p2 = ((struct alist*)ptr)-1;
+    if ( p2->magic == 0x1f2e3d4c ) {
+ p2->last->next = p2->next;
+ p2->next->last = p2->last;
+ ++frees;
+ free(p2);
+    }
+    else
+ free(ptr);
+}
+void *
+arealloc(void *ptr, int size)
+{
+    struct alist *p2 = ((struct alist*)ptr)-1;
+    struct alist save;
+    if ( p2->magic == 0x1f2e3d4c ) {
+ save.next = p2->next;
+ save.last = p2->last;
+ p2 = realloc(p2, sizeof(*p2) + size);
+ if ( p2 ) {
+     p2->size = size;
+     p2->next->last = p2;
+     p2->last->next = p2;
+     ++reallocs;
+     return p2+1;
+ }
+ else {
+     save.next->last = save.last;
+     save.last->next = save.next;
+     return 0;
+ }
+    }
+    return realloc(ptr, size);
+}
+void
+adump()
+{
+    struct alist *p;
+    for ( p = list.next; p && (p != &list); p = p->next ) {
+ fprintf(__stderrp, "allocated: %d byte%s\n", p->size, (p->size==1) ? "" : "s");
+ fprintf(__stderrp, "           [%.*s]\n", p->size, (char*)(p+1));
+    }
+    if ( getenv("AMALLOC_STATISTICS") ) {
+ fprintf(__stderrp, "%d malloc%s\n", mallocs, (mallocs==1)?"":"s");
+ fprintf(__stderrp, "%d realloc%s\n", reallocs, (reallocs==1)?"":"s");
+ fprintf(__stderrp, "%d free%s\n", frees, (frees==1)?"":"s");
+    }
 }
