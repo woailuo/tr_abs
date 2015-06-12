@@ -4,6 +4,7 @@ module E = Errormsg
 
 let str = ref ""
 let funclist = ref (("","") :: [])
+let isRecuriveCall = ref false
 
 let rec fixLval (fname:string) (lv: lval): string =
   match lv with
@@ -53,7 +54,7 @@ and fixInstr (fname : string) (i : instr): string* bool  =
   | Call (_, (Lval (Var a, NoOffset)), exprs ,location) when (a.vname = "free" || a.vname = "malloc")   ->  a.vname, true  (* todo : exprs *)
   | Call (_,((Lval (Var a, _)) as e1), exps, loc) ->
      let str1 = fixExpr fname e1 in
-     if a.vname = fname then ("a",true) else
+     if a.vname = fname then (isRecuriveCall:=true; ("a",true)) else
        (if (String.length str1) > 0 then (str1,true) else ("",false))
   | Call _ -> "",false
   | Asm _-> "",false
@@ -84,7 +85,7 @@ and deleteSemi (str: string) : string =
   if (length > 0) then
     (
       let substr = String.sub str (length-1) 1 in
-      if substr = ";" then String.sub str 0 (length-1)
+      if substr = ";" then(deleteSemi (String.sub str 0 (length-1)))
       else str
     )
   else ""
@@ -95,8 +96,8 @@ and fixStmt (fname : string) (s : stmt) : string =
     let str = fixinstrs fname il in
     deleteSemi str
   | If(_,tb,fb,_) ->
-     let sb1 = fixBlock fname tb in
-     let sb2 = fixBlock fname fb in
+     let sb1 =deleteSemi( fixBlock fname tb) in
+     let sb2 =deleteSemi( fixBlock fname fb) in
      let b1 = findMorF sb1 in
      let b2 = findMorF sb2 in
      begin
@@ -106,7 +107,7 @@ and fixStmt (fname : string) (s : stmt) : string =
            let b3 = isContainsSemi sb1  in
            let b4 = isContainsSemi sb2  in
            match(b3, b4)  with
-               (true ,true ) ->  "(" ^ "("^sb1^")" ^  " + "  ^"("^ sb2 ^")" ^ ")"
+             (true ,true ) ->  "(" ^ "("^ sb1^")" ^  " + "  ^"("^ sb2 ^")" ^ ")"
              | (true, false)->   "(" ^ "("^sb1^")" ^  " + " ^ sb2 ^ ")"
              | (false,true)->  "("^sb1 ^  " + "  ^"("^ sb2 ^")" ^ ")"
              | (false, false) ->  "(" ^sb1 ^  " + "  ^ sb2  ^ ")"
@@ -115,40 +116,40 @@ and fixStmt (fname : string) (s : stmt) : string =
        ( let nstr= ( if (String.length sb2) >0 then sb2 else "0" ) in
          let b3 = isContainsSemi sb1  in
          (* print_string (sb1 ^"   " ^string_of_bool b3 ^ "   2\n"); *)
-         if b3 then   "(" ^ "("^sb1^")" ^  " + " ^ (deleteSemi nstr) ^ ")" else
-           "(" ^sb1 ^  " + "  ^ (deleteSemi nstr)  ^ ")"
+         if b3 then   "(" ^ "("^sb1^")" ^  " + " ^ nstr ^ ")" else
+           "(" ^sb1 ^  " + "  ^ nstr  ^ ")"
        )
      | (false, true) ->
        ( let nstr =(if (String.length sb1) > 0 then sb1 else "0" ) in
          let b3 = isContainsSemi sb2  in
-         if b3 then   "("^ (deleteSemi nstr) ^  " + "  ^"("^ sb2 ^")" ^ ")"
-         else "(" ^ (deleteSemi nstr) ^  " + "  ^ sb2  ^ ")"
+         if b3 then   "("^ nstr ^  " + "  ^"("^ sb2 ^")" ^ ")"
+         else "(" ^  nstr ^  " + "  ^ sb2  ^ ")"
        )
-     | (false, false) ->
-        let nstr1 = (if (String.length sb1)>0 then sb1 else "0") in
-        let nstr2 = (if (String.length sb2)>0 then sb2 else "0") in
-        "(" ^ (deleteSemi nstr1) ^  " + "  ^ (deleteSemi nstr2)  ^ ")"
+     | (false, false) -> ""
+        (* let nstr1 = (if (String.length sb1)>0 then sb1 else "0") in *)
+        (* let nstr2 = (if (String.length sb2)>0 then sb2 else "0") in *)
+        (* "(" ^ (deleteSemi nstr1) ^  " + "  ^ (deleteSemi nstr2)  ^ ")" *)
      end
   | Switch(_,b,_,_) ->
      let sb = fixBlock fname b in
      let b= findMorF sb in
      begin
        match b with
-         true ->   "(" ^ sb ^ ")"
-       | false -> "0"
+         true ->   "(" ^deleteSemi sb ^ ")"
+       | false -> ""
      end
   | Loop(b,_,_,_) ->
      let sb = fixBlock fname b in
      let b = findMorF sb in
      begin
        match b with
-           true ->  "(ua." ^sb ^ "a)"
-       | false -> "(ua." ^ "0" ^ ";a)"
+         true ->  "(ua." ^ deleteSemi sb ^ ";a)"
+       | false -> (* "(ua." ^ "0" ^ ";a)" *) ""
      end
   | Block b ->
      fixBlock fname b
   | TryFinally(b1, b2, _) ->
-    "(" ^ (fixBlock fname b1) ^ " f+ " ^ (fixBlock fname b2 )^ ")"
+     "(" ^ (fixBlock fname b1) ^ " f+ " ^ (fixBlock fname b2)^ ")"
   | TryExcept(b1,_,b2,_) ->
      "(" ^  (fixBlock fname b1 ) ^  " try+ "  ^ (fixBlock fname b2 )  ^ ")"
   | Return (None, loc) -> ""
@@ -161,9 +162,9 @@ and fixStmt (fname : string) (s : stmt) : string =
 and fixstmts (fname) (stmts: stmt list) : string =
   match stmts with
       [] -> ""
-    | s:: [] ->  (fixStmt fname s)
+    | s:: [] -> (fixStmt fname s)
     | s :: rest ->let str = ( fixStmt fname s) in
-                  if (String.length str) > 0 then ( deleteSemi str) ^ ";"^ (fixstmts fname rest)  else (fixstmts fname rest)
+                  if (String.length str) > 0 then (str) ^ ";"^ (fixstmts fname rest) else (fixstmts fname rest)
 
 and fixBlock (fname : string) (b : block)  = fixstmts fname b.bstmts
 
@@ -188,9 +189,16 @@ let abstract (f : file) : unit =
                        ()
                      else (
                        let nstr = fixFunction fd in
-                       if (String.contains nstr 'a') then
+                       if !isRecuriveCall then
                          (
-                           funclist :=  (fd.svar.vname, "(ua." ^ "(" ^nstr^")" ^")") :: !funclist
+                           if(findMorF nstr) then
+                             (
+                               funclist :=  (fd.svar.vname, "(ua." ^ "(" ^deleteSemi nstr^")" ^")") :: !funclist;
+                           isRecuriveCall := false;
+                             )
+                           else
+                             (funclist :=  (fd.svar.vname, nstr ) :: !funclist;
+                              isRecuriveCall := false; )
                          )
                        else
                          (

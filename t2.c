@@ -17,6 +17,8 @@ int fun (int n){
       return 1;
     }
   else {
+    /* int *p =(int*)malloc(sizeof(int)); */
+    /* free(p); */
     return n + fun(n-1);
   }
 }
@@ -32,7 +34,7 @@ int func()
  int *p = (int*)malloc(sizeof(int));
 
  int m = 1;
- func();
+
  int c ;
  scanf("%d",&c);
 
@@ -48,8 +50,9 @@ int func()
 
     }
 
-
   return 0;
+
+
 }
 
 int main()
