@@ -2,9 +2,10 @@ open Cil
 
 module E = Errormsg
 
-let str = ref ""
+(* let str = ref "" *)
 let funclist = ref (("","") :: [])
 let isRecuriveCall = ref false
+
 
 let rec fixLval (fname:string) (lv: lval): string =
   match lv with
@@ -90,6 +91,100 @@ and deleteSemi (str: string) : string =
     )
   else ""
 
+and isCaseOrDefault (labels : label list) :bool =
+       match labels with
+         [] -> false
+       | l :: rest -> (
+         match l with
+           Case _ -> true
+         | Default _ ->  true
+         | _ -> isCaseOrDefault rest
+       )
+
+and  isBreakStmt (s: stmt) : bool =
+  match s.skind with
+  Break _ -> true
+  | _ -> false
+
+and caseString = ref (("","") :: [])
+
+and  findAllCases (fname :string) (casenum:int) (stmts : stmt list) : int =
+  match stmts with
+    [] -> casenum
+  | s::rest -> let b = isCaseOrDefault s.labels in
+               if(b) then (
+                 let str = fixStmt fname s in
+                 let strnum = (string_of_int (casenum + 1)) in
+                 caseString := (strnum, str) :: !caseString;
+                 let n=  findAllCases fname (casenum + 1) rest in
+                 n
+                              )
+               else (
+                 let str = fixStmt fname s in
+                 let strnum = (string_of_int casenum) in
+                 caseString := (strnum, str) :: !caseString;
+                 let n = findAllCases fname casenum rest in
+                 n
+               );
+
+and  mergecaselist = ref (("","") :: [])
+and  caseZero = ref false
+
+and mergeCases (num : int) (strlist: (string*string) list) : string=
+  let length = List.length strlist in
+  begin
+    for i = 1 to num do
+    let str1 = ref "" in
+    begin
+      for j = 0 to length-1 do
+        let (a,b) = (List.nth strlist j) in
+        let boolean = (i = (int_of_string a)) in
+        if boolean then ( str1 := ( if(findMorF b) then
+                                      (
+                                        if (findMorF (!str1)) then (deleteSemi(!str1) ^ ";" ^ b) else
+                                          b
+                                      )
+                                    else (!str1)  ) )
+      else ()
+    done
+    end ;
+    (
+        if (findMorF (!str1)) then
+          (
+            let newstring = !str1 in
+            mergecaselist := (string_of_int i, newstring) :: !mergecaselist;
+          )
+        else
+          (
+            caseZero := true;
+          )
+      )
+  done
+  end;
+  (
+    let len = List.length !mergecaselist in
+    let newstr = ref "" in
+    match len > 0 with
+      false -> ""
+    | true -> begin
+              for i = 0 to len -1  do
+                let (a,b) = List.nth !mergecaselist i in
+                let b1 = isContainsSemi b in
+                let b2 = findMorF (!newstr) in
+                (
+                  match b1,b2 with
+                    true, true-> newstr :=  "(" ^ b ^ ")" ^ " + " ^ !newstr
+                  | true, false -> newstr :=   "(" ^ b ^ ")"
+                  | false, true -> newstr :=  b ^ " + " ^ !newstr
+                  | false, false ->  newstr := b
+                )
+              done;
+              if(!caseZero) then ("(" ^ newstr.contents ^ " + "^ "0" ^")") else
+            ( "(" ^ newstr.contents ^")")
+            end
+  )
+
+
 and fixStmt (fname : string) (s : stmt) : string =
   match s.skind with
   | Instr il ->
@@ -130,14 +225,18 @@ and fixStmt (fname : string) (s : stmt) : string =
         (* let nstr2 = (if (String.length sb2)>0 then sb2 else "0") in *)
         (* "(" ^ (deleteSemi nstr1) ^  " + "  ^ (deleteSemi nstr2)  ^ ")" *)
      end
-  | Switch(_,b,_,_) ->
-     let sb = fixBlock fname b in
-     let b= findMorF sb in
-     begin
-       match b with
-         true ->   "(" ^deleteSemi sb ^ ")"
-       | false -> ""
-     end
+  | Switch(_,b, stmts ,_) ->
+     caseString := [];
+     mergecaselist := [];
+     let num = findAllCases fname 0 b.bstmts in
+     let newlist = List.rev (caseString.contents) in
+     let strnew = mergeCases num newlist in
+     mergecaselist := [];
+     caseString := [];
+     caseZero := false;
+      strnew;
+
+
   | Loop(b,_,_,_) ->
      let sb = fixBlock fname b in
      let b = findMorF sb in
@@ -149,9 +248,9 @@ and fixStmt (fname : string) (s : stmt) : string =
   | Block b ->
      fixBlock fname b
   | TryFinally(b1, b2, _) ->
-     "(" ^ (fixBlock fname b1) ^ " f+ " ^ (fixBlock fname b2)^ ")"
+     "(" ^ deleteSemi (fixBlock fname b1) ^ " f+ " ^ deleteSemi (fixBlock fname b2)^ ")"
   | TryExcept(b1,_,b2,_) ->
-     "(" ^  (fixBlock fname b1 ) ^  " try+ "  ^ (fixBlock fname b2 )  ^ ")"
+     "(" ^ deleteSemi (fixBlock fname b1 ) ^  " try+ "  ^ deleteSemi (fixBlock fname b2 )  ^ ")"
   | Return (None, loc) -> ""
   | Return (Some expr, loc) -> fixExpr fname expr
   | Goto _ -> ""
@@ -172,12 +271,14 @@ and fixFunction (fd : fundec)  = fixBlock (fd.svar.vname) fd.sbody
 
 and printfuns (flists: (string*string)list) : unit  =
   match flists with
-    (a,b) :: rest ->( if ( a = "") then ()
-                      else
+    (a,b) :: rest ->( if ( String.length a) >0 then
                         begin
                           print_string a; print_string ":  "; print_string (deleteSemi b ); print_newline ();
+                          printfuns rest
+                        end
+                      else
                         printfuns rest
-                        end)
+                    )
   | [] -> ()
 
 let abstract (f : file) : unit =
