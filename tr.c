@@ -1207,7 +1207,7 @@ struct exception {
 };
 extern int matherr(struct exception *) __attribute__((deprecated));
 
-
+/* Exactly one of IEEE_8087, IEEE_MC68k, VAX, or IBM should be defined. */
 typedef union { double d; ULong L[2]; } U;
  struct
 Bigint {
