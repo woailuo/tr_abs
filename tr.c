@@ -1018,13 +1018,10 @@ int main()
  scanf("%d",&uio);
   int *p = (int*)malloc(sizeof(int));
   switch (uio) {
-  case 0: break;
-  case 1: free(p);printf("this is num 1\n"); if(uio) {free(p);} else {return 0; }; break;
-  case 2: free(p);printf("this is num 2\n"); break;
-  case 3: free(p);uio++; int m = 3; m--; break; printf("this is num 3\n"); free(p);break;
-  case 4: printf("this is num 4\n");break;
-  case 5: break;
-  default: break;
+  case 1 : if(uio){free(p);}printf(" 1 \n");break;
+  case 2 :printf("  2 \n");int m = 3 ; m--; break;
+  case 3 : printf(" 3 \n");free(p);break;
+  default: ;break;
   }
   return 0;
 }

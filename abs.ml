@@ -112,6 +112,7 @@ and  findAllCases (fname :string) (casenum:int) (stmts : stmt list) : int =
   match stmts with
     [] -> casenum
   | s::rest -> let b = isCaseOrDefault s.labels in
+               let isBreak = isBreakStmt s in   (*  todo:  consider case 1: .... case 2: ...;break , in case1 no break *)
                if(b) then (
                  let str = fixStmt fname s in
                  let strnum = (string_of_int (casenum + 1)) in
@@ -134,14 +135,15 @@ and mergeCases (num : int) (strlist: (string*string) list) : string=
   let length = List.length strlist in
   begin
     for i = 1 to num do
-    let str1 = ref "" in
+      let str1 = ref "" in
+      let flagsemi = ref false in
     begin
       for j = 0 to length-1 do
         let (a,b) = (List.nth strlist j) in
         let boolean = (i = (int_of_string a)) in
         if boolean then ( str1 := ( if(findMorF b) then
                                       (
-                                        if (findMorF (!str1)) then (deleteSemi(!str1) ^ ";" ^ b) else
+                                        if (findMorF (!str1)) then ( flagsemi := true ;(deleteSemi(!str1) ^ ";" ^ b)) else
                                           b
                                       )
                                     else (!str1)  ) )
@@ -152,13 +154,14 @@ and mergeCases (num : int) (strlist: (string*string) list) : string=
         if (findMorF (!str1)) then
           (
             let newstring = !str1 in
-            mergecaselist := (string_of_int i, newstring) :: !mergecaselist;
+            if !flagsemi  then ( mergecaselist := (string_of_int i, "(" ^ newstring ^ ")") :: !mergecaselist; ) else
+              ( mergecaselist := (string_of_int i, newstring) :: !mergecaselist; )
           )
         else
           (
             caseZero := true;
           )
-      )
+      ); flagsemi := false
   done
   end;
   (
@@ -169,18 +172,29 @@ and mergeCases (num : int) (strlist: (string*string) list) : string=
     | true -> begin
               for i = 0 to len -1  do
                 let (a,b) = List.nth !mergecaselist i in
-                let b1 = isContainsSemi b in
+                let b1 = isContainsSemi b in  (*   todo:  if malloc;free;(.. + ..) ?; not correct *)
                 let b2 = findMorF (!newstr) in
                 (
                   match b1,b2 with
-                    true, true-> newstr :=  "(" ^ b ^ ")" ^ " + " ^ !newstr
+                    true, true->  newstr :=  "(" ^ b ^ ")" ^ " + " ^ !newstr
                   | true, false -> newstr :=   "(" ^ b ^ ")"
                   | false, true -> newstr :=  b ^ " + " ^ !newstr
                   | false, false ->  newstr := b
                 )
               done;
-              if(!caseZero) then ("(" ^ newstr.contents ^ " + "^ "0" ^")") else
-            ( "(" ^ newstr.contents ^")")
+              if(!caseZero) then ("(" ^ newstr.contents ^ " + "^ "0" ^")")
+              else
+                (
+                  if (len >= 2) then ( "(" ^ newstr.contents ^")" )
+                  else (
+                    let strtmp= newstr.contents in
+                    (
+                      match strtmp with
+                        "free" | "malloc" -> strtmp
+                      | _ -> "(" ^ strtmp ^")"
+                    )
+                  )
+                )
             end
   )
 
@@ -234,9 +248,7 @@ and fixStmt (fname : string) (s : stmt) : string =
      mergecaselist := [];
      caseString := [];
      caseZero := false;
-      strnew;
-
-
+     if(findMorF strnew) then strnew else ""
   | Loop(b,_,_,_) ->
      let sb = fixBlock fname b in
      let b = findMorF sb in
