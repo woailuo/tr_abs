@@ -61,7 +61,7 @@ and fixInstr (fname : string) (i : instr): string* bool  =
   | Asm _-> "",false
 
 and findMorF (str: string): bool =
-  let b =  (String.contains str 'm') || (String.contains str 'f') in
+  let b =  (String.contains str 'm') || (String.contains str 'f') (* || (String.contains str 'a') *) in
   b
 
 and isContainsSemi (str: string) : bool =
@@ -310,7 +310,7 @@ let abstract (f : file) : unit =
                            isRecuriveCall := false;
                              )
                            else
-                             (funclist :=  (fd.svar.vname, nstr ) :: !funclist;
+                             ( funclist :=  (fd.svar.vname, nstr ) :: !funclist;
                               isRecuriveCall := false; )
                          )
                        else
