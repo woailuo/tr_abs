@@ -47,9 +47,8 @@ int main()
   list2[0][1]->db = malloc(sizeof(struct Database));
   list2[0][1]->year = 2016;
 
-  if(p){
-    **p = func(**p);
-    int m = func(**p);
+  if(p != NULL){
+    free(p);
   }
 
   return 0;
