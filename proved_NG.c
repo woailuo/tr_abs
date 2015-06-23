@@ -18,6 +18,22 @@ void destroyMacro(Macro *macro) {
  free(macro);
 }
 
+(*** Could be rewritten to
+
+ if (macro) {
+   switch (macro->type) {
+   case USE_MACRO_NODE: destroyUseMacro(macro->use); break;
+   case LINKER_FLAG_MACRO_NODE: destroyLinkerFlagMacro(macro->linker); break;
+   default:
+    errorMessage(""Macro not being destroyed"");
+    break;
+   }
+  free(macro);
+ } else {
+   return;
+ }
+ ***)
+
 ***
 destroyLinkerFlagMacro:
 original :  free
@@ -300,7 +316,7 @@ int linenoiseHistoryAdd(const char *line) {
     history_len++;
     return 1;
 }
-
+(*  todo here : 2015-06-23*)
 *************
 
 linenoisePrompt:   NG
