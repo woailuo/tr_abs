@@ -75,3 +75,12 @@ void clear_connection_baggage(FdData * fdDataList, int fd, fd_set * pMaster)
     }
 
 }
+
+
+
+— Behavioral type inference and Transformation
+     unstructured control flow statement (eg, break, continue, return)
+—  if-then-else;  how can we deal with?
+—  Interprocedural analysis of “dose this call f(x) raise null exception “
+—  behavioral types of functions whose repl in external files
+—  s= malloc(); if(s==null) return;
