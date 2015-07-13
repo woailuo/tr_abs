@@ -3182,5 +3182,4 @@ LIBETPAN_EXPORT chash * chash_new(unsigned int size, int flags)
   return h;
 }
 
-
 *****
