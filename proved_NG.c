@@ -5,6 +5,8 @@ https://github.com/ark-lang/ark-c/blob/master/src/parser/ast.c
 destroyMacro:     NG
 original:  (free + free + 0);free
 rewritten:  (free + free + 0);free
+(*  COMM:  Behavioral type inference and Transformation unstructured control flow statement (eg, break, continue, return)  **)
+(* COMM:  if-then-else;  how can we deal with? *)
 
 void destroyMacro(Macro *macro) {
  if (!macro) return;
@@ -33,6 +35,7 @@ void destroyMacro(Macro *macro) {
    return;
  }
  ***)
+
 
 ***
 destroyLinkerFlagMacro:
@@ -191,6 +194,8 @@ sds *sdssplitargs(const char *line, int *argc) {
         return NULL;
 }
 
+(*  COMM: Interprocedural analysis of “dose this call f(x) raise null exception “  *)
+
 *****
 sdsfree:
 original : free
@@ -278,6 +283,9 @@ int  main(int argc, const char **argv){
   return eval(source, path);
 }
 
+(* COMM:  behavioral types of functions whose repl in external files *)
+
+
 *****
 repl:
 orginal : (ua.free;a)
@@ -295,6 +303,7 @@ https://github.com/luna/luna/blob/master/deps/linenoise/linenoise.c
 linenoiseHistoryAdd:         NG
 original :(malloc + 0);(free + 0)
 rewritten:  (malloc + 0);(free + 0)
+(* s= malloc(); if(s==null) return;*)
 
 int linenoiseHistoryAdd(const char *line) {
     char *linecopy;
@@ -316,7 +325,7 @@ int linenoiseHistoryAdd(const char *line) {
     history_len++;
     return 1;
 }
-(*  todo here : 2015-06-23*)
+
 *************
 
 linenoisePrompt:   NG
@@ -518,6 +527,7 @@ up_down_arrow:
     }
     return len;
 }
+(* COMM: value dependent types * )
 
 ************
 
@@ -531,6 +541,7 @@ https://github.com/riolet/nope.c/blob/master/nope.c
 shutdown_connection:   NG
 original :  ((free;free;free;free) + 0)
 rewritten:  ((free;free;free;free) + 0)
+
 
 void shutdown_connection(FdData * fds, int i, ssize_t nbytes, fd_set * pMaster)
 {
@@ -594,6 +605,7 @@ https://github.com/orangeduck/BuildYourOwnLisp/blob/master/src/mpc.c
 mpcaf_grammar_repeat:   NG
 original:  (free + 0);(free + 0);(free + 0);(free + 0);free
 rewritten:  (free + 0);(free + 0);(free + 0);(free + 0);free
+-- array of pointers
 
 static mpc_val_t *mpcaf_grammar_repeat(int n, mpc_val_t **xs) {
   int num;
@@ -611,20 +623,7 @@ static mpc_val_t *mpcaf_grammar_repeat(int n, mpc_val_t **xs) {
 ************
 
 
-**********
-
-mpc_print:     NG
-original :  (ua.((free + 0);((free;free) + 0);(free + 0);(free + 0);(free + 0)))
-rewritten:   (ua.((free + 0);((free;free) + 0);(free + 0);(free + 0);(free + 0)))
-
-void mpc_print(mpc_parser_t *p) {
-  mpc_print_unretained(p, 1);
-  printf(""\n"");
-}
-
-*******
-
-mpc_print_unretained:    NGB
+mpc_print_unretained:    NG
 original :  (ua.((free + 0);((free;free) + 0);(free + 0);(free + 0);(free + 0)))
 rewritten:  (ua.((free + 0);((free;free) + 0);(free + 0);(free + 0);(free + 0)))
 
@@ -741,11 +740,14 @@ static void mpc_print_unretained(mpc_parser_t *p, int force) {
   }
 
 }
+(* type dependent  *)
 
+***********
 
 mpcf_nth_free:   NG
 original: (ua.(free + 0);a)
 rewritten:  (ua.(free + 0);a)
+-- array of pointers
 
 static mpc_val_t *mpcf_nth_free(int n, mpc_val_t **xs, int x) {
   int i;
@@ -760,6 +762,7 @@ static mpc_val_t *mpcf_nth_free(int n, mpc_val_t **xs, int x) {
 mpcf_re_repeat:   NG
 original:  (free + 0);(free + 0);(free + 0);free
 rewritten: (free + 0);(free + 0);(free + 0);free
+(* array of pointers (*mpcaf_grammar_repeat*)*)
 
 static mpc_val_t *mpcf_re_repeat(int n, mpc_val_t **xs) {
   int num;
@@ -780,6 +783,7 @@ static mpc_val_t *mpcf_re_repeat(int n, mpc_val_t **xs) {
 mpc_define:  NG
 original:  (0 + free);free
 rewritten:  (0 + free);free
+( *if-then-else *)
 
 mpc_parser_t *mpc_define(mpc_parser_t *p, mpc_parser_t *a) {
 
@@ -796,12 +800,13 @@ mpc_parser_t *mpc_define(mpc_parser_t *p, mpc_parser_t *a) {
   free(a);
   return p;
 }
-
+(mpc_failf may alloc)
 *******
 
 mpc_undefine_unretained:   NG
 original:  (ua.((free + free + (a;free) + free + (free;free) + 0);((free;free) + 0)))
 rewritten: (ua.((free + free + (a;free) + free + (free;free) + 0);((free;free) + 0)))
+(*  v de *)
 
 static void mpc_undefine_unretained(mpc_parser_t *p, int force) {
 
@@ -849,7 +854,7 @@ static void mpc_undefine_unretained(mpc_parser_t *p, int force) {
   }
 
 }
-
+(v de t)
 ******
 
 
@@ -873,7 +878,7 @@ static void mpc_input_unmark(mpc_input_t *i) {
   }
 
 }
-
+(v de t)
 *****
 
 mpc_input_delete:  NG
@@ -994,7 +999,7 @@ int mkd_css(Document *d, char **res)
     }
     return EOF;
 }
-
+(v de ty)
 **********
 
 --------------------------------------------------------------------------------------------
@@ -1063,7 +1068,7 @@ unsigned int cmd_script(callbackp *callbacki)
 
  return (RETURN_NOTHING);
 }
-
+(v de t)
 ****
 
 ------------------------------------------------------------------------------------------------

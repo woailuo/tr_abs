@@ -239,6 +239,82 @@ extern int __vsprintf_chk (char * , int, size_t,
       const char * , va_list);
 extern int __vsnprintf_chk (char * , size_t, int, size_t,
        const char * , va_list);
+
+void *memchr(const void *, int, size_t);
+int memcmp(const void *, const void *, size_t);
+void *memcpy(void *, const void *, size_t);
+void *memmove(void *, const void *, size_t);
+void *memset(void *, int, size_t);
+char *strcat(char *, const char *);
+char *strchr(const char *, int);
+int strcmp(const char *, const char *);
+int strcoll(const char *, const char *);
+char *strcpy(char *, const char *);
+size_t strcspn(const char *, const char *);
+char *strerror(int) __asm("_" "strerror" );
+size_t strlen(const char *);
+char *strncat(char *, const char *, size_t);
+int strncmp(const char *, const char *, size_t);
+char *strncpy(char *, const char *, size_t);
+char *strpbrk(const char *, const char *);
+char *strrchr(const char *, int);
+size_t strspn(const char *, const char *);
+char *strstr(const char *, const char *);
+char *strtok(char *, const char *);
+size_t strxfrm(char *, const char *, size_t);
+
+
+char *strtok_r(char *, const char *, char **);
+
+
+int strerror_r(int, char *, size_t);
+char *strdup(const char *);
+void *memccpy(void *, const void *, int, size_t);
+
+
+char *stpcpy(char *, const char *);
+char *stpncpy(char *, const char *, size_t) ;
+char *strndup(const char *, size_t) ;
+size_t strnlen(const char *, size_t) ;
+char *strsignal(int sig);
+
+typedef __darwin_size_t rsize_t;
+typedef int errno_t;
+
+errno_t memset_s(void *, rsize_t, int, rsize_t) ;
+
+
+void *memmem(const void *, size_t, const void *, size_t) ;
+void memset_pattern4(void *, const void *, size_t) ;
+void memset_pattern8(void *, const void *, size_t) ;
+void memset_pattern16(void *, const void *, size_t) ;
+char *strcasestr(const char *, const char *);
+char *strnstr(const char *, const char *, size_t);
+size_t strlcat(char *, const char *, size_t);
+size_t strlcpy(char *, const char *, size_t);
+void strmode(int, char *);
+char *strsep(char **, const char *);
+void swab(const void * , void * , ssize_t);
+
+
+int bcmp(const void *, const void *, size_t) ;
+void bcopy(const void *, void *, size_t) ;
+void bzero(void *, size_t) ;
+char *index(const char *, int) ;
+char *rindex(const char *, int) ;
+int ffs(int);
+int strcasecmp(const char *, const char *);
+int strncasecmp(const char *, const char *, size_t);
+
+
+int ffsl(long) ;
+int ffsll(long long) ;
+int fls(int) ;
+int flsl(long) ;
+int flsll(long long) ;
+
+typedef __builtin_va_list __gnuc_va_list;
+typedef __gnuc_va_list va_list;
 typedef enum {
  P_ALL,
  P_PID,
@@ -977,84 +1053,53 @@ unsigned long long
 extern char *suboptarg;
 void *valloc(size_t);
 
-typedef __builtin_va_list __gnuc_va_list;
-typedef __gnuc_va_list va_list;
+struct timespec
+{
+ __darwin_time_t tv_sec;
+ long tv_nsec;
+};
+typedef __darwin_clock_t clock_t;
+typedef __darwin_time_t time_t;
+struct tm {
+ int tm_sec;
+ int tm_min;
+ int tm_hour;
+ int tm_mday;
+ int tm_mon;
+ int tm_year;
+ int tm_wday;
+ int tm_yday;
+ int tm_isdst;
+ long tm_gmtoff;
+ char *tm_zone;
+};
+extern char *tzname[];
+extern int getdate_err;
+extern long timezone __asm("_" "timezone" );
+extern int daylight;
 
-void *memchr(const void *, int, size_t);
-int memcmp(const void *, const void *, size_t);
-void *memcpy(void *, const void *, size_t);
-void *memmove(void *, const void *, size_t);
-void *memset(void *, int, size_t);
-char *strcat(char *, const char *);
-char *strchr(const char *, int);
-int strcmp(const char *, const char *);
-int strcoll(const char *, const char *);
-char *strcpy(char *, const char *);
-size_t strcspn(const char *, const char *);
-char *strerror(int) __asm("_" "strerror" );
-size_t strlen(const char *);
-char *strncat(char *, const char *, size_t);
-int strncmp(const char *, const char *, size_t);
-char *strncpy(char *, const char *, size_t);
-char *strpbrk(const char *, const char *);
-char *strrchr(const char *, int);
-size_t strspn(const char *, const char *);
-char *strstr(const char *, const char *);
-char *strtok(char *, const char *);
-size_t strxfrm(char *, const char *, size_t);
-
-
-char *strtok_r(char *, const char *, char **);
-
-
-int strerror_r(int, char *, size_t);
-char *strdup(const char *);
-void *memccpy(void *, const void *, int, size_t);
-
-
-char *stpcpy(char *, const char *);
-char *stpncpy(char *, const char *, size_t) ;
-char *strndup(const char *, size_t) ;
-size_t strnlen(const char *, size_t) ;
-char *strsignal(int sig);
-
-typedef __darwin_size_t rsize_t;
-typedef int errno_t;
-
-errno_t memset_s(void *, rsize_t, int, rsize_t) ;
-
-
-void *memmem(const void *, size_t, const void *, size_t) ;
-void memset_pattern4(void *, const void *, size_t) ;
-void memset_pattern8(void *, const void *, size_t) ;
-void memset_pattern16(void *, const void *, size_t) ;
-char *strcasestr(const char *, const char *);
-char *strnstr(const char *, const char *, size_t);
-size_t strlcat(char *, const char *, size_t);
-size_t strlcpy(char *, const char *, size_t);
-void strmode(int, char *);
-char *strsep(char **, const char *);
-void swab(const void * , void * , ssize_t);
-
-
-int bcmp(const void *, const void *, size_t) ;
-void bcopy(const void *, void *, size_t) ;
-void bzero(void *, size_t) ;
-char *index(const char *, int) ;
-char *rindex(const char *, int) ;
-int ffs(int);
-int strcasecmp(const char *, const char *);
-int strncasecmp(const char *, const char *, size_t);
-
-
-int ffsl(long) ;
-int ffsll(long long) ;
-int fls(int) ;
-int flsl(long) ;
-int flsll(long long) ;
-
-
-extern int * __error(void);
+char *asctime(const struct tm *);
+clock_t clock(void) __asm("_" "clock" );
+char *ctime(const time_t *);
+double difftime(time_t, time_t);
+struct tm *getdate(const char *);
+struct tm *gmtime(const time_t *);
+struct tm *localtime(const time_t *);
+time_t mktime(struct tm *) __asm("_" "mktime" );
+size_t strftime(char * , size_t, const char * , const struct tm * ) __asm("_" "strftime" );
+char *strptime(const char * , const char * , struct tm * ) __asm("_" "strptime" );
+time_t time(time_t *);
+void tzset(void);
+char *asctime_r(const struct tm * , char * );
+char *ctime_r(const time_t *, char *);
+struct tm *gmtime_r(const time_t * , struct tm * );
+struct tm *localtime_r(const time_t * , struct tm * );
+time_t posix2time(time_t);
+void tzsetwall(void);
+time_t time2posix(time_t);
+time_t timelocal(struct tm * const);
+time_t timegm(struct tm * const);
+int nanosleep(const struct timespec *, struct timespec *) __asm("_" "nanosleep" );
 
 typedef __darwin_wint_t wint_t;
 typedef struct {
@@ -1242,229 +1287,178 @@ isspecial(int _c)
 {
  return (__istype(_c, 0x00100000L));
 }
-
-void __assert_rtn(const char *, const char *, int, const char *) __attribute__((noreturn));
-
-struct timespec
+typedef struct { char *text; int size, alloc; } Cstring;
+extern void Csputc(int, Cstring *);
+extern int Csprintf(Cstring *, char *, ...);
+extern int Cswrite(Cstring *, char *, int);
+extern void Csreparse(Cstring *, char *, int, int);
+typedef struct footnote {
+    Cstring tag;
+    Cstring link;
+    Cstring title;
+    int height, width;
+    int dealloc;
+    int refnumber;
+    int flags;
+} Footnote;
+typedef enum { chk_text, chk_code,
+        chk_hr, chk_dash,
+        chk_tilde, chk_backtick,
+        chk_equal } line_type;
+typedef struct line {
+    Cstring text;
+    struct line *next;
+    int dle;
+    int flags;
+    line_type kind;
+    int count;
+} Line;
+typedef struct paragraph {
+    struct paragraph *next;
+    struct paragraph *down;
+    struct line *text;
+    char *ident;
+    char *lang;
+    enum { WHITESPACE=0, CODE, QUOTE, MARKUP,
+    HTML, STYLE, DL, UL, OL, AL, LISTITEM,
+    HDR, HR, TABLE, SOURCE } typ;
+    enum { IMPLICIT=0, PARA, CENTER} align;
+    int hnumber;
+} Paragraph;
+enum { ETX, SETEXT };
+typedef struct block {
+    enum { bTEXT, bSTAR, bUNDER } b_type;
+    int b_count;
+    char b_char;
+    Cstring b_text;
+    Cstring b_post;
+} block;
+typedef struct { block *text; int size, alloc; } Qblock;
+typedef char* (*mkd_callback_t)(const char*, const int, void*);
+typedef void (*mkd_free_t)(char*, void*);
+typedef struct callback_data {
+    void *e_data;
+    mkd_callback_t e_url;
+    mkd_callback_t e_flags;
+    mkd_free_t e_free;
+} Callback_data;
+struct escaped {
+    char *text;
+    struct escaped *up;
+} ;
+struct footnote_list {
+    int reference;
+    struct { Footnote *text; int size, alloc; } note;
+} ;
+typedef struct mmiot {
+    Cstring out;
+    Cstring in;
+    Qblock Q;
+    int isp;
+    struct escaped *esc;
+    char *ref_prefix;
+    struct footnote_list *footnotes;
+     double flags;
+    Callback_data *cb;
+} MMIOT;
+typedef struct document {
+    int magic;
+    Line *title;
+    Line *author;
+    Line *date;
+    struct { Line *text, *end; } content;
+    Paragraph *code;
+    int compiled;
+    int html;
+    int tabstop;
+    char *ref_prefix;
+    MMIOT *ctx;
+    Callback_data cb;
+} Document;
+struct string_stream {
+    const char *data;
+    int size;
+} ;
+extern int mkd_firstnonblank(Line *);
+extern int mkd_compile(Document *, DWORD);
+extern int mkd_document(Document *, char **);
+extern int mkd_generatehtml(Document *, FILE *);
+extern int mkd_css(Document *, char **);
+extern int mkd_generatecss(Document *, FILE *);
+extern int mkd_xml(char *, int , char **);
+extern int mkd_generatexml(char *, int, FILE *);
+extern void mkd_cleanup(Document *);
+extern int mkd_line(char *, int, char **, DWORD);
+extern int mkd_generateline(char *, int, FILE*, DWORD);
+extern void mkd_basename(Document*, char *);
+typedef int (*mkd_sta_function_t)(const int,const void*);
+extern void mkd_string_to_anchor(char*,int, mkd_sta_function_t, void*, int);
+extern Document *mkd_in(FILE *, DWORD);
+extern Document *mkd_string(const char*,int, DWORD);
+extern Document *gfm_in(FILE *, DWORD);
+extern Document *gfm_string(const char*,int, DWORD);
+extern void mkd_initialize();
+extern void mkd_shlib_destructor();
+extern void mkd_ref_prefix(Document*, char*);
+extern void ___mkd_freeLine(Line *);
+extern void ___mkd_freeLines(Line *);
+extern void ___mkd_freeParagraph(Paragraph *);
+extern void ___mkd_freefootnote(Footnote *);
+extern void ___mkd_freefootnotes(MMIOT *);
+extern void ___mkd_initmmiot(MMIOT *, void *);
+extern void ___mkd_freemmiot(MMIOT *, void *);
+extern void ___mkd_freeLineRange(Line *, Line *);
+extern void ___mkd_xml(char *, int, FILE *);
+extern void ___mkd_reparse(char *, int, int, MMIOT*, char*);
+extern void ___mkd_emblock(MMIOT*);
+extern void ___mkd_tidy(Cstring *);
+extern Document *__mkd_new_Document();
+extern void __mkd_enqueue(Document*, Cstring *);
+extern void __mkd_header_dle(Line *);
+extern int __mkd_io_strget(struct string_stream *);
+static void
+stylesheets(Paragraph *p, Cstring *f)
 {
- __darwin_time_t tv_sec;
- long tv_nsec;
-};
-typedef __darwin_clock_t clock_t;
-typedef __darwin_time_t time_t;
-struct tm {
- int tm_sec;
- int tm_min;
- int tm_hour;
- int tm_mday;
- int tm_mon;
- int tm_year;
- int tm_wday;
- int tm_yday;
- int tm_isdst;
- long tm_gmtoff;
- char *tm_zone;
-};
-extern char *tzname[];
-extern int getdate_err;
-extern long timezone __asm("_" "timezone" );
-extern int daylight;
-
-char *asctime(const struct tm *);
-clock_t clock(void) __asm("_" "clock" );
-char *ctime(const time_t *);
-double difftime(time_t, time_t);
-struct tm *getdate(const char *);
-struct tm *gmtime(const time_t *);
-struct tm *localtime(const time_t *);
-time_t mktime(struct tm *) __asm("_" "mktime" );
-size_t strftime(char * , size_t, const char * , const struct tm * ) __asm("_" "strftime" );
-char *strptime(const char * , const char * , struct tm * ) __asm("_" "strptime" );
-time_t time(time_t *);
-void tzset(void);
-char *asctime_r(const struct tm * , char * );
-char *ctime_r(const time_t *, char *);
-struct tm *gmtime_r(const time_t * , struct tm * );
-struct tm *localtime_r(const time_t * , struct tm * );
-time_t posix2time(time_t);
-void tzsetwall(void);
-time_t time2posix(time_t);
-time_t timelocal(struct tm * const);
-time_t timegm(struct tm * const);
-int nanosleep(const struct timespec *, struct timespec *) __asm("_" "nanosleep" );
-
-typedef unsigned char u_char;
-typedef unsigned short u_short;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef u_int64_t u_quad_t;
-typedef int64_t quad_t;
-typedef quad_t * qaddr_t;
-typedef char * caddr_t;
-typedef int32_t daddr_t;
-typedef u_int32_t fixpt_t;
-typedef __darwin_blkcnt_t blkcnt_t;
-typedef __darwin_blksize_t blksize_t;
-typedef __darwin_gid_t gid_t;
-typedef __uint32_t in_addr_t;
-typedef __uint16_t in_port_t;
-typedef __darwin_ino_t ino_t;
-typedef __darwin_ino64_t ino64_t;
-typedef __int32_t key_t;
-typedef __uint16_t nlink_t;
-typedef int32_t segsz_t;
-typedef int32_t swblk_t;
-typedef __darwin_useconds_t useconds_t;
-typedef __darwin_suseconds_t suseconds_t;
-
-typedef struct fd_set {
- __int32_t fds_bits[((((1024) % ((sizeof(__int32_t) * 8))) == 0) ? ((1024) / ((sizeof(__int32_t) * 8))) : (((1024) / ((sizeof(__int32_t) * 8))) + 1))];
-} fd_set;
-
-static __inline int
-__darwin_fd_isset(int _n, const struct fd_set *_p)
+    Line* q;
+    for ( ; p ; p = p->next ) {
+ if ( p->typ == STYLE ) {
+     for ( q = p->text; q ; q = q->next ) {
+  Cswrite(f, (q->text).text, (q->text).size);
+  Csputc('\n', f);
+     }
+ }
+ if ( p->down )
+     stylesheets(p->down, f);
+    }
+}
+int
+mkd_css(Document *d, char **res)
 {
- return (_p->fds_bits[(unsigned long)_n/(sizeof(__int32_t) * 8)] & ((__int32_t)(1<<((unsigned long)_n % (sizeof(__int32_t) * 8)))));
-}
-typedef __int32_t fd_mask;
-typedef __darwin_pthread_cond_t pthread_cond_t;
-typedef __darwin_pthread_condattr_t pthread_condattr_t;
-typedef __darwin_pthread_mutex_t pthread_mutex_t;
-typedef __darwin_pthread_mutexattr_t pthread_mutexattr_t;
-typedef __darwin_pthread_once_t pthread_once_t;
-typedef __darwin_pthread_rwlock_t pthread_rwlock_t;
-typedef __darwin_pthread_rwlockattr_t pthread_rwlockattr_t;
-typedef __darwin_pthread_t pthread_t;
-typedef __darwin_pthread_key_t pthread_key_t;
-typedef __darwin_fsblkcnt_t fsblkcnt_t;
-typedef __darwin_fsfilcnt_t fsfilcnt_t;
-typedef char *sds;
-struct sdshdr {
-    int len;
-    int free;
-    char buf[];
-};
-static inline size_t sdslen(const sds s) {
-    struct sdshdr *sh = (void*)(s-sizeof *sh);
-    return sh->len;
-}
-static inline size_t sdsavail(const sds s) {
-    struct sdshdr *sh = (void*)(s-sizeof *sh);
-    return sh->free;
-}
-sds sdsnewlen(const void *init, size_t initlen);
-sds sdsnew(const char *init);
-sds sdsempty(void);
-size_t sdslen(const sds s);
-sds sdsdup(const sds s);
-void sdsfree(sds s);
-size_t sdsavail(const sds s);
-sds sdsgrowzero(sds s, size_t len);
-sds sdscatlen(sds s, const void *t, size_t len);
-sds sdscat(sds s, const char *t);
-sds sdscatsds(sds s, const sds t);
-sds sdscpylen(sds s, const char *t, size_t len);
-sds sdscpy(sds s, const char *t);
-sds sdscatvprintf(sds s, const char *fmt, va_list ap);
-sds sdscatprintf(sds s, const char *fmt, ...)
-    __attribute__((format(printf, 2, 3)));
-void sdstrim(sds s, const char *cset);
-void sdsrange(sds s, int start, int end);
-void sdsupdatelen(sds s);
-void sdsclear(sds s);
-int sdscmp(const sds s1, const sds s2);
-sds *sdssplitlen(const char *s, int len, const char *sep, int seplen, int *count);
-void sdsfreesplitres(sds *tokens, int count);
-void sdstolower(sds s);
-void sdstoupper(sds s);
-sds sdsfromlonglong(long long value);
-sds sdscatrepr(sds s, const char *p, size_t len);
-sds *sdssplitargs(const char *line, int *argc);
-sds sdsmapchars(sds s, const char *from, const char *to, size_t setlen);
-sds sdsjoin(char **argv, int argc, char *sep, size_t seplen);
-sds sdsjoinsds(sds *argv, int argc, const char *sep, size_t seplen);
-sds sdsMakeRoomFor(sds s, size_t addlen);
-void sdsIncrLen(sds s, int incr);
-sds sdsRemoveFreeSpace(sds s);
-size_t sdsAllocSize(sds s);
-extern _Bool DEBUG_MODE;
-extern _Bool VERBOSE_MODE;
-extern char *OUTPUT_EXECUTABLE_NAME;
-extern _Bool OUTPUT_C;
-extern char *ADDITIONAL_COMPILER_ARGS;
-extern char *COMPILER;
-extern char *linkerFlags;
-extern _Bool IGNORE_MAIN;
-_Bool isASCII(char c);
-char *customStrdup(const char *s);
-char *boldText(char *s);
-char *randString(size_t length);
-char *toUppercase(char *str);
-char *removeExtension(char *file);
-char *getFileName(char *path);
-void verboseModeMessage(const char *fmt, ...);
-void warningMessage(const char *fmt, ...);
-void warningMessageWithPosition(char *fileName, int lineNumber, int charNumber, const char *fmt, ...);
-void verboseModeMessage(const char *fmt, ...);
-void errorMessage(const char *fmt, ...);
-void errorMessageWithPosition(char *fileName, int lineNumber, int charNumber, const char *fmt, ...);
-void errorMessageWithPositionAndLine(char *src, char *fileName, int lineNumber, int lineStart, int charNumber, int charEnd, const char *fmt, ...);
-void primaryMessage(const char *fmt, ...);
-char *readFile(const char *fileName);
-const char *getFilenameExtension(const char *filename);
-void *safeMalloc(size_t size);
-void *safeCalloc(size_t size);
-typedef void* VectorItem;
-typedef struct {
- VectorItem *items;
- int maxSize;
- int size;
- int type;
-} Vector;
-Vector *createVector(int type);
-void pushBackItem(Vector *vec, VectorItem item);
-VectorItem getVectorItem(Vector *vec, int index);
-VectorItem getVectorTop(Vector *vec);
-void destroyVector(Vector *vec);
-Vector *createVector(int type) {
- Vector *vec = safeMalloc(sizeof(*vec));
- vec->size = 0;
- vec->maxSize = 2;
- vec->items = safeMalloc(sizeof(*vec->items) * vec->maxSize);
- vec->type = type;
- return vec;
-}
-void pushBackItem(Vector *vec, VectorItem item) {
- if (vec) {
-  if (vec->size >= vec->maxSize) {
-   vec->maxSize = vec->type == 0 ? vec->maxSize + 1 : vec->maxSize * 2;
-   vec->items = realloc(vec->items, sizeof(*vec->items) * vec->maxSize);
-   if (!vec->items) {
-    verboseModeMessage("Failed to allocate memory for vector contents");
-    return;
-   }
-  }
-  vec->items[vec->size++] = item;
+    Cstring f;
+    int size;
+    if ( res && d && d->compiled ) {
+ *res = 0;
+ ( ((f).text = (void*)0), ((f).size = (f).alloc = 0) );
+ (f).text = ((f).alloc > (f).size + (100) ? (f).text : (f).text ? realloc((f).text, sizeof (f).text[0] * ((f).alloc = 100+(100)+(f).size)) : malloc(sizeof (f).text[0] * ((f).alloc = 100+(100)+(f).size)));
+ stylesheets(d->code, &f);
+ if ( (size = (f).size) > 0 ) {
+     ((f).size++)[((f).size < (f).alloc) ? ((f).text) : ((f).text = (f).text ? realloc((f).text, sizeof (f).text[0] * ((f).alloc += 100)) : malloc(sizeof (f).text[0] * ((f).alloc += 100)) )] = 0;
+     *res = (f).text;
  }
- else {
-  verboseModeMessage("Cannot push item to a null vector");
-  return;
- }
+ else
+     (f).alloc ? (free((f).text), (f).size = (f).alloc = 0) : ( (f).size = 0 );
+ return size;
+    }
+    return (-1);
 }
-VectorItem getVectorItem(Vector *vec, int index) {
- if (index > vec->size) {
-  verboseModeMessage("Index out of vector bounds, index: %d, size: %d", index, vec->size);
-  return 0;
- }
- return vec->items[index];
-}
-VectorItem getVectorTop(Vector *vec) {
- return getVectorItem(vec, vec->size - 1);
-}
-void destroyVector(Vector *vec) {
- free(vec->items);
- free(vec);
- verboseModeMessage("Destroyed vector");
+int
+mkd_generatecss(Document *d, FILE *f)
+{
+    char *res;
+    int written = (-1), size = mkd_css(d, &res);
+    if ( size > 0 )
+ written = fwrite(res, 1, size, f);
+    if ( res )
+ free(res);
+    return (written == size) ? size : (-1);
 }
