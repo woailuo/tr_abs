@@ -588,36 +588,6 @@ rewritten: (ua.(free + 0);a)
   }
 
 ********
-https://github.com/APE-Project/APE_Server/blob/master/deps/js/src/ctypes/libffi/src/dlmalloc.c
-
-realloc:    NG
-original : (malloc + ((free + 0) + malloc;(free + 0)))
-rewritten: (malloc + ((free + 0) + malloc;(free + 0)))
-
-void* dlrealloc(void* oldmem, size_t bytes) {
-  if (oldmem == 0)
-    return dlmalloc(bytes);
-#ifdef REALLOC_ZERO_BYTES_FREES
-  if (bytes == 0) {
-    dlfree(oldmem);
-    return 0;
-  }
-#endif /* REALLOC_ZERO_BYTES_FREES */
-  else {
-#if ! FOOTERS
-    mstate m = gm;
-#else /* FOOTERS */
-    mstate m = get_mstate_for(mem2chunk(oldmem));
-    if (!ok_magic(m)) {
-      USAGE_ERROR_ACTION(m, oldmem);
-      return 0;
-    }
-#endif /* FOOTERS */
-    return internal_realloc(m, oldmem, bytes);
-  }
- }
-
- ****
 https://github.com/APE-Project/APE_Server/blob/master/src/dns.c
 
 dnscb:  NG
@@ -1652,11 +1622,11 @@ carray * carray_new(unsigned int initsize) {
   array = (carray *) malloc(sizeof(carray));
   if (!array) return NULL;
 
-  if (initsize < MIN_ARRAY_SIZE)
+  /* if (initsize < MIN_ARRAY_SIZE)
     initsize = MIN_ARRAY_SIZE;
-
-  array->len = 0;
-  array->max = initsize;
+  */
+  //array->len = 0;
+  //array->max = initsize;
   array->array = (void **) malloc(sizeof(void *) * initsize);
   if (!array->array) {
     free(array);
